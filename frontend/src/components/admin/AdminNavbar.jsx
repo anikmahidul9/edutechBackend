@@ -292,7 +292,7 @@ const AdminNavbar = () => {
             Development with <FaHeart className="text-red-500 animate-pulse" />{" "}
             by
             <span className="font-semibold text-purple-600">
-              Kingshukhajong
+              Sr Arif
             </span>
           </p>
         </div>

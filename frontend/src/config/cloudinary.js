@@ -6,4 +6,4 @@ export const cloudinaryConfig = {
 };
 
 // Upload preset (you'll need to create this in your Cloudinary dashboard)
-export const uploadPreset = "edutech_uploads";
+export const uploadPreset = "ml_default";

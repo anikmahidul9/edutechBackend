@@ -294,7 +294,7 @@ const FacultyNavbar = () => {
           <p className="text-gray-700 text-sm font-medium flex items-center gap-1.5">
             Development with <FaHeart className="text-red-500 animate-pulse" />{" "}
             by
-            <span className="font-semibold text-teal-600">Kingshukhajong</span>
+            <span className="font-semibold text-teal-600">Sr Arif</span>
           </p>
         </div>
       </div>

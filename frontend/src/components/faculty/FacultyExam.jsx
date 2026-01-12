@@ -17,8 +17,12 @@ import {
   where,
   getDocs,
   serverTimestamp,
+  doc,
+  getDoc,
+  setDoc,
 } from "firebase/firestore";
 
+import { uploadPreset } from "../../config/cloudinary";
 const FacultyExam = () => {
   const [activeTab, setActiveTab] = useState("quiz"); // 'quiz' or 'writtenExam'
   // Quiz states
@@ -28,7 +32,6 @@ const FacultyExam = () => {
   const [writtenExamTitle, setWrittenExamTitle] = useState("");
   const [writtenExamDescription, setWrittenExamDescription] = useState("");
   const [writtenExamFile, setWrittenExamFile] = useState(null);
-  const [writtenExamPdfUrl, setWrittenExamPdfUrl] = useState("");
 
   const [selectedCourse, setSelectedCourse] = useState("");
   const [courses, setCourses] = useState([]);
@@ -79,10 +82,6 @@ const FacultyExam = () => {
           ...doc.data(),
         }));
         setFacultyWrittenExams(writtenExamsData);
-        
-        // Optionally fetch submissions for these exams here, or when an exam is expanded
-        // For now, we'll fetch submissions when an exam is expanded to avoid too many reads
-        
       } catch (err) {
         console.error("Error fetching faculty data:", err);
         setError("Failed to load your data.");
@@ -92,36 +91,91 @@ const FacultyExam = () => {
     fetchFacultyData();
   }, []);
 
+  // const uploadPdfToCloudinary = async (file) => {
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("file", file);
+  //     formData.append("upload_preset", uploadPreset); // Use imported uploadPreset
+  //     formData.append("resource_type", "raw"); // Explicitly set resource type for non-image files
+
+  //     const cloudinaryCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  //     const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/auto/upload`; // Corrected URL with /auto/upload
+
+  //     const response = await fetch(
+  //       uploadUrl,
+  //       {
+  //         method: "POST",
+  //         body: formData,
+  //       }
+  //     );
+
+  //     const data = await response.json();
+  //     console.log("Cloudinary response:", data);
+
+
+  //     if (!response.ok) {
+  //       throw new Error(data.error?.message || "PDF upload failed");
+  //     }
+
+  //     // --- Client-side URL Correction Workaround ---
+  //     // If Cloudinary's preset forces resource_type to 'image' for a PDF,
+  //     // we manually correct the URL to use the 'raw' delivery path.
+  //     let secureUrl = data.secure_url;
+  //     if (data.resource_type === "image" && data.format === "pdf") {
+  //       const rawUrl = secureUrl.replace('/image/upload/', '/raw/upload/');
+  //       return rawUrl;
+  //     }
+
+  //     return secureUrl;
+  //   } catch (uploadError) {
+  //     console.error("Cloudinary upload error:", uploadError);
+  //     setError(`Failed to upload PDF: ${uploadError.message}. 
+  //       Please check: 
+  //       1. Your Cloudinary upload preset exists and is named "${uploadPreset}".
+  //       2. The preset is set to "Unsigned" mode.
+  //       3. Your Cloudinary cloud name is correct in your .env file.`);
+  //     return null;
+  //   }
+  // };
+
   const uploadPdfToCloudinary = async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", "edutech_exams"); // Use a specific preset for exams
-      formData.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
 
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${
-          import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-        }/image/upload`, // Cloudinary's generic upload endpoint
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+    // IMPORTANT: do NOT force resource_type
+    // Cloudinary will store PDF as image (which is correct)
+    const cloudinaryCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
-      if (!response.ok) {
-        throw new Error("PDF upload failed");
-      }
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/auto/upload`;
 
-      const data = await response.json();
-      return data.secure_url;
-    } catch (uploadError) {
-      console.error("Cloudinary upload error:", uploadError);
-      setError("Failed to upload PDF to Cloudinary.");
-      return null;
+    const response = await fetch(uploadUrl, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    console.log("Cloudinary response:", data);
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || "PDF upload failed");
     }
-  };
 
+    // ✅ ALWAYS return the secure_url exactly as Cloudinary gives it
+    return data.secure_url;
+
+  } catch (error) {
+    console.error("Cloudinary upload error:", error);
+    setError(
+      "Failed to upload PDF. Please check your Cloudinary preset and try again."
+    );
+    return null;
+  }
+};
+
+  
   const handleAddQuestion = () => {
     setQuestions([
       ...questions,
@@ -232,7 +286,17 @@ const FacultyExam = () => {
 
   const handleWrittenExamFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setWrittenExamFile(e.target.files[0]);
+      const file = e.target.files[0];
+      // Validate file type
+      if (file.type !== "application/pdf") {
+        setError("Please upload a PDF file only.");
+        setWrittenExamFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+      setWrittenExamFile(file);
     }
   };
 
@@ -273,6 +337,8 @@ const FacultyExam = () => {
         courseId: selectedCourse,
         facultyId: user.uid,
         pdfUrl: pdfUrl,
+        fileName: writtenExamFile.name,
+        fileSize: writtenExamFile.size,
         createdAt: serverTimestamp(),
       });
 
@@ -284,6 +350,19 @@ const FacultyExam = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = ""; // Clear file input
       }
+      
+      // Refresh the exams list
+      const writtenExamsQ = query(
+        collection(db, "writtenExams"),
+        where("facultyId", "==", user.uid)
+      );
+      const writtenExamsSnapshot = await getDocs(writtenExamsQ);
+      const writtenExamsData = writtenExamsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setFacultyWrittenExams(writtenExamsData);
+      
     } catch (err) {
       console.error("Error saving written exam:", err);
       setError("Failed to upload written exam. Please try again.");
@@ -308,7 +387,9 @@ const FacultyExam = () => {
           const submission = { id: docSnap.id, ...docSnap.data() };
           // Fetch student name
           const studentDoc = await getDoc(doc(db, "users", submission.studentId));
-          const studentName = studentDoc.exists() ? studentDoc.data().fullName || "Unknown Student" : "Unknown Student";
+          const studentName = studentDoc.exists()
+            ? studentDoc.data().fullName || "Unknown Student"
+            : "Unknown Student";
           return { ...submission, studentName };
         })
       );
@@ -367,10 +448,14 @@ const FacultyExam = () => {
 
       // Update the marks for the specific submission in Firestore
       const submissionRef = doc(db, "writtenExamSubmissions", submissionId);
-      await setDoc(submissionRef, {
-        marks: parseFloat(marks), // Store marks as a number
-        gradedAt: serverTimestamp(),
-      }, { merge: true }); // Use merge to only update the marks field
+      await setDoc(
+        submissionRef,
+        {
+          marks: parseFloat(marks), // Store marks as a number
+          gradedAt: serverTimestamp(),
+        },
+        { merge: true }
+      ); // Use merge to only update the marks field
 
       setSuccess("Marks saved successfully!");
     } catch (err) {
@@ -413,12 +498,18 @@ const FacultyExam = () => {
         </div>
 
         {success && (
-          <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-lg shadow-sm" role="alert">
+          <div
+            className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-lg shadow-sm"
+            role="alert"
+          >
             {success}
           </div>
         )}
         {error && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg shadow-sm" role="alert">
+          <div
+            className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg shadow-sm"
+            role="alert"
+          >
             {error}
           </div>
         )}
@@ -442,7 +533,10 @@ const FacultyExam = () => {
             </div>
 
             <div className="mb-6">
-              <label htmlFor="quizDescription" className="block text-gray-700 text-sm font-bold mb-2">
+              <label
+                htmlFor="quizDescription"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
                 Quiz Description
               </label>
               <textarea
@@ -486,7 +580,10 @@ const FacultyExam = () => {
             </h2>
 
             {questions.map((q, qIndex) => (
-              <div key={qIndex} className="bg-gray-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-200">
+              <div
+                key={qIndex}
+                className="bg-gray-50 rounded-xl p-6 mb-6 shadow-sm border border-gray-200"
+              >
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold text-gray-800">
                     Question {qIndex + 1}
@@ -503,7 +600,10 @@ const FacultyExam = () => {
                 </div>
 
                 <div className="mb-4">
-                  <label htmlFor={`questionText-${qIndex}`} className="block text-gray-700 text-sm font-bold mb-2">
+                  <label
+                    htmlFor={`questionText-${qIndex}`}
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                  >
                     Question Text
                   </label>
                   <input
@@ -580,14 +680,20 @@ const FacultyExam = () => {
 
         {activeTab === "writtenExam" && (
           <div>
-            <form onSubmit={handleSaveWrittenExam} className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <form
+              onSubmit={handleSaveWrittenExam}
+              className="bg-white rounded-2xl shadow-lg p-6 mb-8"
+            >
               <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
                 <FaUpload className="mr-3 text-emerald-600" /> Upload Written Exam Questions
               </h2>
 
               {/* Written Exam Details */}
               <div className="mb-6">
-                <label htmlFor="writtenExamTitle" className="block text-gray-700 text-sm font-bold mb-2">
+                <label
+                  htmlFor="writtenExamTitle"
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                >
                   Exam Title
                 </label>
                 <input
@@ -602,7 +708,10 @@ const FacultyExam = () => {
               </div>
 
               <div className="mb-6">
-                <label htmlFor="writtenExamDescription" className="block text-gray-700 text-sm font-bold mb-2">
+                <label
+                  htmlFor="writtenExamDescription"
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                >
                   Exam Description
                 </label>
                 <textarea
@@ -616,7 +725,10 @@ const FacultyExam = () => {
               </div>
 
               <div className="mb-8">
-                <label htmlFor="selectCourseWritten" className="block text-gray-700 text-sm font-bold mb-2">
+                <label
+                  htmlFor="selectCourseWritten"
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                >
                   Assign to Course
                 </label>
                 <div className="relative">
@@ -662,7 +774,7 @@ const FacultyExam = () => {
                 </button>
                 {writtenExamFile && (
                   <p className="text-sm text-gray-500 mt-2">
-                    Selected: {writtenExamFile.name}
+                    Selected: {writtenExamFile.name} ({(writtenExamFile.size / 1024).toFixed(2)} KB)
                   </p>
                 )}
               </div>
@@ -693,19 +805,26 @@ const FacultyExam = () => {
                   {facultyWrittenExams.map((exam) => (
                     <div key={exam.id} className="border border-gray-200 rounded-xl p-4">
                       <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-semibold text-gray-800">
-                          {exam.title} ({courses.find(c => c.id === exam.courseId)?.title || 'N/A'})
-                        </h3>
+                        <div>
+                          <h3 className="text-xl font-semibold text-gray-800">
+                            {exam.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm">
+                            Course: {courses.find((c) => c.id === exam.courseId)?.title || "N/A"}
+                          </p>
+                        </div>
                         <button
                           onClick={() => toggleSubmissions(exam.id)}
-                          className="text-emerald-600 hover:text-emerald-800 font-medium"
+                          className="text-emerald-600 hover:text-emerald-800 font-medium px-4 py-2 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
                         >
                           {submissionsByExam[exam.id] ? "Hide Submissions" : "View Submissions"}
                         </button>
                       </div>
                       {submissionsByExam[exam.id] && (
                         <div className="mt-4 border-t border-gray-200 pt-4">
-                          <h4 className="text-lg font-semibold text-gray-700 mb-3">Submissions:</h4>
+                          <h4 className="text-lg font-semibold text-gray-700 mb-3">
+                            Submissions:
+                          </h4>
                           {submissionsByExam[exam.id].loading ? (
                             <p className="text-gray-500 flex items-center">
                               <FaSpinner className="animate-spin mr-2" /> Loading submissions...
@@ -715,10 +834,20 @@ const FacultyExam = () => {
                           ) : (
                             <div className="space-y-3">
                               {submissionsByExam[exam.id].data.map((submission) => (
-                                <div key={submission.id} className="bg-gray-50 p-3 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                                <div
+                                  key={submission.id}
+                                  className="bg-gray-50 p-3 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center"
+                                >
                                   <div>
-                                    <p className="font-medium text-gray-800">{submission.studentName}</p>
-                                    <a href={submission.pdfUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm flex items-center">
+                                    <p className="font-medium text-gray-800">
+                                      {submission.studentName}
+                                    </p>
+                                    <a
+                                      href={submission.pdfUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:underline text-sm flex items-center"
+                                    >
                                       <FaFilePdf className="mr-1" /> View Submission
                                     </a>
                                   </div>
@@ -727,11 +856,15 @@ const FacultyExam = () => {
                                       type="number"
                                       placeholder="Marks"
                                       value={submission.marks || ""}
-                                      onChange={(e) => handleMarksChange(exam.id, submission.id, e.target.value)}
+                                      onChange={(e) =>
+                                        handleMarksChange(exam.id, submission.id, e.target.value)
+                                      }
                                       className="w-24 px-2 py-1 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                     />
                                     <button
-                                      onClick={() => handleSaveMarks(exam.id, submission.id, submission.marks)}
+                                      onClick={() =>
+                                        handleSaveMarks(exam.id, submission.id, submission.marks)
+                                      }
                                       className="bg-emerald-500 text-white px-3 py-1 rounded-md text-sm hover:bg-emerald-600 transition-colors"
                                       disabled={loading}
                                     >
@@ -757,63 +890,3 @@ const FacultyExam = () => {
 };
 
 export default FacultyExam;
-
-const handleWrittenExamFileChange = (e) => {
-  if (e.target.files && e.target.files[0]) {
-    setWrittenExamFile(e.target.files[0]);
-  }
-};
-
-const handleSaveWrittenExam = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
-  setSuccess("");
-
-  if (
-    !writtenExamTitle.trim() ||
-    !writtenExamDescription.trim() ||
-    !selectedCourse ||
-    !writtenExamFile
-  ) {
-    setError("Please fill all fields and upload a PDF for the written exam.");
-    setLoading(false);
-    return;
-  }
-
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      setError("You must be logged in to upload an exam.");
-      setLoading(false);
-      return;
-    }
-
-    const pdfUrl = await uploadPdfToCloudinary(writtenExamFile);
-    if (!pdfUrl) {
-      setLoading(false);
-      return;
-    }
-
-    await addDoc(collection(db, "writtenExams"), {
-      title: writtenExamTitle,
-      description: writtenExamDescription,
-      courseId: selectedCourse,
-      facultyId: user.uid,
-      pdfUrl: pdfUrl,
-      createdAt: serverTimestamp(),
-    });
-
-    setSuccess("Written exam uploaded successfully!");
-    setWrittenExamTitle("");
-    setWrittenExamDescription("");
-    setSelectedCourse("");
-    setWrittenExamFile(null);
-    fileInputRef.current.value = ""; // Clear file input
-  } catch (err) {
-    console.error("Error saving written exam:", err);
-    setError("Failed to upload written exam. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
