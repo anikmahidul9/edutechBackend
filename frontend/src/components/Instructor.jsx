@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../config/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 const Instructor = () => {
   const [instructors, setInstructors] = useState([]);
@@ -18,53 +18,52 @@ const Instructor = () => {
 
       // Fetch faculty data from Firebase Firestore users collection
       const usersCollection = collection(db, "users");
-      const usersSnapshot = await getDocs(usersCollection);
+      const q = query(
+        usersCollection,
+        where("role", "==", "faculty"),
+        where("status", "==", "approved")
+      );
+      const usersSnapshot = await getDocs(q);
 
-      // Filter only faculty members who are approved (isActive can be true or false)
-      const facultyList = usersSnapshot.docs
-        .filter(
-          (doc) =>
-            doc.data().role === "faculty" && doc.data().status === "approved"
-        )
-        .map((doc) => {
-          const data = doc.data();
-          // Handle expertise as string or array
-          let expertiseArr = [];
-          if (Array.isArray(data.expertise)) {
-            expertiseArr = data.expertise;
-          } else if (
-            typeof data.expertise === "string" &&
-            data.expertise.trim() !== ""
-          ) {
-            expertiseArr = [data.expertise];
-          }
-          return {
-            id: doc.id,
-            ...data,
-            name:
-              (data.fullName && data.fullName.trim()) ||
-              (
-                (data.firstName || "").trim() +
-                " " +
-                (data.lastName || "").trim()
-              ).trim() ||
-              "Unknown Name",
-            title: data.highestQualification || "Instructor",
-            specialty:
-              data.specialization ||
-              data.department ||
-              data.expertise ||
-              "General",
-            image:
-              data.photoURL ||
-              "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
-            rating: data.rating || 4.5,
-            students: data.students || data.totalStudents || 0,
-            courses: data.courses || data.totalCourses || 0,
-            bio: data.bio || "Experienced educator",
-            expertise: expertiseArr,
-          };
-        });
+      const facultyList = usersSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        // Handle expertise as string or array
+        let expertiseArr = [];
+        if (Array.isArray(data.expertise)) {
+          expertiseArr = data.expertise;
+        } else if (
+          typeof data.expertise === "string" &&
+          data.expertise.trim() !== ""
+        ) {
+          expertiseArr = [data.expertise];
+        }
+        return {
+          id: doc.id,
+          ...data,
+          name:
+            (data.fullName && data.fullName.trim()) ||
+            (
+              (data.firstName || "").trim() +
+              " " +
+              (data.lastName || "").trim()
+            ).trim() ||
+            "Unknown Name",
+          title: data.highestQualification || "Instructor",
+          specialty:
+            data.specialization ||
+            data.department ||
+            data.expertise ||
+            "General",
+          image:
+            data.photoURL ||
+            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
+          rating: data.rating || 4.5,
+          students: data.students || data.totalStudents || 0,
+          courses: data.courses || data.totalCourses || 0,
+          bio: data.bio || "Experienced educator",
+          expertise: expertiseArr,
+        };
+      });
 
       setInstructors(facultyList);
       setLoading(false);
