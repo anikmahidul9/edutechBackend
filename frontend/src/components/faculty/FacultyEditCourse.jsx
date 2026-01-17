@@ -78,6 +78,7 @@ const FacultyEditCourse = () => {
           thumbnailURL: data.thumbnailURL || "",
           youtubePlaylist: data.youtubePlaylist || "",
           videos: data.videos || [],
+          enrolledStudents: data.enrolledStudents || 0, // Preserve enrolledStudents
         });
       } else {
         setError("Course not found");

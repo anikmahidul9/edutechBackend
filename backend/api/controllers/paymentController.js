@@ -1,5 +1,6 @@
 const axios = require("axios");
 const admin = require("../../config/firebase");
+const { FieldValue } = require("firebase-admin/firestore");
 
 const initiatePayment = async (req, res) => {
   const { courseId, userId, amount } = req.body;
@@ -128,6 +129,12 @@ const paymentSuccess = async (req, res) => {
       enrolledAt: new Date(),
       status: "enrolled",
       paymentAmount: parseFloat(amount) || 0,
+    });
+
+    // Increment enrolledStudents count in the courses collection
+    const courseRef = db.collection("courses").doc(courseId);
+    await courseRef.update({
+      enrolledStudents: FieldValue.increment(1),
     });
 
     console.log(`Payment successful: User ${userId} enrolled in course ${courseId} for amount ${amount}`);

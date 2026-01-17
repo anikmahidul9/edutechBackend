@@ -126,11 +126,11 @@ const Hcourses = () => {
                     {/* Price */}
                     <div className="mb-3">
                       <span className="text-3xl font-bold text-indigo-600">
-                        ${course.price || "49.99"}
+                        Tk{course.price || "49.99"}
                       </span>
                       {course.originalPrice && (
                         <span className="text-lg text-gray-400 line-through ml-2">
-                          ${course.originalPrice}
+                          Tk{course.originalPrice}
                         </span>
                       )}
                     </div>

@@ -62,11 +62,17 @@ const StudentDashboard = () => {
           try {
             const courseDoc = await getDoc(doc(db, "courses", courseId));
             if (courseDoc.exists()) {
+              const enrollmentDoc = await getDoc(
+                doc(db, "enrollments", `${user.uid}_${courseId}`)
+              );
+              const progress = enrollmentDoc.exists()
+                ? enrollmentDoc.data().progress
+                : 0;
+
               coursesData.push({
                 id: courseDoc.id,
                 ...courseDoc.data(),
-                // Mocking progress for now - replace with real progress data
-                progress: Math.floor(Math.random() * 100),
+                progress: progress,
               });
             }
           } catch (error) {

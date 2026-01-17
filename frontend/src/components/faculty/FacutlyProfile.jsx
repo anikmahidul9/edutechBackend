@@ -789,7 +789,15 @@
 
 import React, { useState, useEffect } from "react";
 import { auth, db } from "../../config/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { cloudinaryConfig } from "../../config/cloudinary";
 import {
@@ -841,14 +849,20 @@ const FacultyProfile = () => {
   });
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState("");
+  const [stats, setStats] = useState({
+    coursesTeaching: 0,
+    totalStudents: 0,
+    averageRating: 0,
+    publications: 0, // Assuming this is a static value for now
+  });
 
-  // Fetch faculty profile data from database
+  // Fetch faculty profile data and stats from database
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUserId(user.uid);
         try {
-          // Fetch from users collection where registration data is stored
+          // Fetch user profile data
           const userDocRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userDocRef);
 
@@ -878,12 +892,10 @@ const FacultyProfile = () => {
               photoURL: data.photoURL || user.photoURL || "",
             });
 
-            // Set photo preview if exists
             if (data.photoURL || user.photoURL) {
               setPhotoPreview(data.photoURL || user.photoURL);
             }
           } else {
-            // If no profile exists, set basic info from auth
             setProfileData((prev) => ({
               ...prev,
               email: user.email || "",
@@ -894,8 +906,38 @@ const FacultyProfile = () => {
               setPhotoPreview(user.photoURL);
             }
           }
+
+          // Fetch faculty stats
+          const coursesQuery = query(
+            collection(db, "courses"),
+            where("instructorId", "==", user.uid)
+          );
+          const coursesSnapshot = await getDocs(coursesQuery);
+          const courses = coursesSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+
+          const coursesTeaching = courses.length;
+          const totalStudents = courses.reduce(
+            (sum, course) => sum + (course.students ? course.students.length : 0),
+            0
+          );
+          const totalRating = courses.reduce(
+            (sum, course) => sum + (course.rating || 0),
+            0
+          );
+          const averageRating =
+            courses.length > 0 ? (totalRating / courses.length).toFixed(1) : 0;
+
+          setStats({
+            coursesTeaching,
+            totalStudents,
+            averageRating,
+            publications: 23, // Static for now
+          });
         } catch (err) {
-          console.error("Error fetching faculty profile:", err);
+          console.error("Error fetching faculty data:", err);
           setError("Failed to load profile data. Please try again.");
         } finally {
           setLoading(false);
@@ -955,7 +997,6 @@ const FacultyProfile = () => {
     try {
       let photoURL = profileData.photoURL;
 
-      // Upload new photo if selected
       if (selectedPhoto) {
         photoURL = await uploadToCloudinary(selectedPhoto);
       }
@@ -980,11 +1021,9 @@ const FacultyProfile = () => {
         updatedAt: new Date().toISOString(),
       });
 
-      // Update local state with new photo URL
       setProfileData((prev) => ({ ...prev, photoURL }));
       setPhotoPreview(photoURL);
       setSelectedPhoto(null);
-
       setIsEditing(false);
       console.log("Profile saved successfully");
     } catch (err) {
@@ -998,19 +1037,14 @@ const FacultyProfile = () => {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith("image/")) {
         setError("Please select an image file");
         return;
       }
-
-      // Validate file size
       if (file.size > 5 * 1024 * 1024) {
         setError("Photo size should be less than 5MB");
         return;
       }
-
-      console.log("Photo selected:", file.name, file.size, file.type);
       setSelectedPhoto(file);
       setPhotoPreview(URL.createObjectURL(file));
       setError(null);
@@ -1024,29 +1058,29 @@ const FacultyProfile = () => {
     });
   };
 
-  const stats = [
+  const statsData = [
     {
       icon: <FaBook className="text-2xl" />,
       label: "Courses Teaching",
-      value: "5",
+      value: stats.coursesTeaching,
       color: "from-blue-500 to-blue-600",
     },
     {
       icon: <FaUsers className="text-2xl" />,
       label: "Total Students",
-      value: "150",
+      value: stats.totalStudents,
       color: "from-emerald-500 to-emerald-600",
     },
     {
       icon: <FaStar className="text-2xl" />,
       label: "Average Rating",
-      value: "4.8",
+      value: stats.averageRating,
       color: "from-amber-500 to-amber-600",
     },
     {
       icon: <FaAward className="text-2xl" />,
       label: "Publications",
-      value: "23",
+      value: stats.publications,
       color: "from-purple-500 to-purple-600",
     },
   ];
@@ -1069,7 +1103,6 @@ const FacultyProfile = () => {
     },
   ];
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50 flex items-center justify-center">
@@ -1083,7 +1116,6 @@ const FacultyProfile = () => {
     );
   }
 
-  // Error state
   if (error && !userId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50 flex items-center justify-center">
@@ -1100,17 +1132,14 @@ const FacultyProfile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
-      {/* Error Message */}
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg">
           <p className="font-semibold">{error}</p>
         </div>
       )}
 
-      {/* Header Section */}
       <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white p-8 rounded-lg shadow-xl mb-6">
         <div className="flex flex-col md:flex-row items-center gap-6">
-          {/* Profile Picture */}
           <div className="relative group">
             {photoPreview || profileData.photoURL ? (
               <img
@@ -1147,7 +1176,6 @@ const FacultyProfile = () => {
             )}
           </div>
 
-          {/* Profile Info */}
           <div className="flex-1 text-center md:text-left">
             <h1 className="text-4xl font-bold mb-2">
               {profileData.name || "Faculty Member"}
@@ -1222,7 +1250,6 @@ const FacultyProfile = () => {
             </div>
           </div>
 
-          {/* Edit Button */}
           <div>
             {!isEditing ? (
               <button
@@ -1255,30 +1282,10 @@ const FacultyProfile = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {stats.map((stat, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all transform hover:-translate-y-1"
-          >
-            <div
-              className={`bg-gradient-to-r ${stat.color} text-white w-14 h-14 rounded-lg flex items-center justify-center mb-4 shadow-md`}
-            >
-              {stat.icon}
-            </div>
-            <p className="text-gray-600 text-sm font-medium mb-1">
-              {stat.label}
-            </p>
-            <p className="text-3xl font-bold text-gray-800">{stat.value}</p>
-          </div>
-        ))}
-      </div>
+     
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Profile Information */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Contact Information */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
               <div className="bg-emerald-100 p-2 rounded-lg">
@@ -1391,7 +1398,6 @@ const FacultyProfile = () => {
             </div>
           </div>
 
-          {/* Academic Information */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
               <div className="bg-blue-100 p-2 rounded-lg">
@@ -1460,7 +1466,6 @@ const FacultyProfile = () => {
                 )}
               </div>
 
-              {/* Social Media Links - Only show in edit mode */}
               {isEditing && (
                 <>
                   <div className="col-span-2">
@@ -1531,9 +1536,7 @@ const FacultyProfile = () => {
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Achievements */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
               <div className="bg-amber-100 p-2 rounded-lg">
@@ -1564,25 +1567,6 @@ const FacultyProfile = () => {
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl shadow-lg p-6 text-white">
-            <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
-            <div className="space-y-3">
-              <button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-3 rounded-lg transition-all font-medium text-left flex items-center gap-3">
-                <FaBook />
-                View My Courses
-              </button>
-              <button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-3 rounded-lg transition-all font-medium text-left flex items-center gap-3">
-                <FaUsers />
-                View Students
-              </button>
-              <button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm px-4 py-3 rounded-lg transition-all font-medium text-left flex items-center gap-3">
-                <FaCalendar />
-                View Schedule
-              </button>
             </div>
           </div>
         </div>

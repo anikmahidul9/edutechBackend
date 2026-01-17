@@ -278,58 +278,7 @@ const FacultyDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <FaFire className="text-orange-500" />
-            Quick Actions
-          </h2>
-          <div className="space-y-3">
-            <button
-              onClick={() => navigate("/faculty/add-course")}
-              className="w-full flex items-center gap-3 p-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg"
-            >
-              <FaPlus className="text-xl" />
-              <span className="font-semibold">Create New Course</span>
-            </button>
 
-            <button
-              onClick={() => navigate("/faculty/my-courses")}
-              className="w-full flex items-center gap-3 p-4 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors border-2 border-blue-200"
-            >
-              <FaBook className="text-xl" />
-              <span className="font-semibold">View My Courses</span>
-            </button>
-
-            <button
-              onClick={() => navigate("/faculty/profile")}
-              className="w-full flex items-center gap-3 p-4 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors border-2 border-purple-200"
-            >
-              <FaGraduationCap className="text-xl" />
-              <span className="font-semibold">Edit Profile</span>
-            </button>
-          </div>
-
-          {/* Stats Summary */}
-          <div className="mt-6 pt-6 border-t">
-            <h3 className="text-sm font-bold text-gray-700 mb-3">
-              This Month's Summary
-            </h3>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">New Students</span>
-                <span className="font-bold text-green-600">+24</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Course Views</span>
-                <span className="font-bold text-blue-600">1,234</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Total Revenue</span>
-                <span className="font-bold text-emerald-600">$0</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Recent Courses */}

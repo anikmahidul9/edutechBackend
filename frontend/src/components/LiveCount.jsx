@@ -1,23 +1,35 @@
 import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
 
 const LiveCount = () => {
   const [counters, setCounters] = useState({
     students: 0,
     instructors: 0,
     courses: 0,
-    videos: 0,
+  });
+
+  const [targets, setTargets] = useState({
+    students: 0,
+    instructors: 0,
+    courses: 0,
   });
 
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef(null);
 
-  // Target values for each counter
-  const targets = {
-    students: 15000,
-    instructors: 250,
-    courses: 850,
-    videos: 3200,
-  };
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await axios.get("http://localhost:8000/api/stats");
+        setTargets(response.data);
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
 
   // Intersection Observer to trigger animation when section is visible
   useEffect(() => {
@@ -134,28 +146,6 @@ const LiveCount = () => {
       ),
       gradient: "from-green-500 to-emerald-500",
       bgGradient: "from-green-500/10 to-emerald-500/10",
-    },
-    {
-      id: "videos",
-      label: "Total Videos",
-      value: counters.videos,
-      icon: (
-        <svg
-          className="w-12 h-12"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-          />
-        </svg>
-      ),
-      gradient: "from-orange-500 to-red-500",
-      bgGradient: "from-orange-500/10 to-red-500/10",
     },
   ];
 

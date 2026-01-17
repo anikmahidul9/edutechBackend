@@ -106,43 +106,20 @@ const FacultyNavbar = () => {
           {/* Center: Search Bar */}
           <div className="hidden md:flex flex-1 max-w-md mx-8">
             <div className="relative w-full group">
-              <input
-                type="text"
-                placeholder="Search courses, students, materials..."
-                className="w-full pl-12 pr-4 py-3 bg-white/80 border-2 border-emerald-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 focus:bg-white transition-all shadow-sm hover:shadow-md placeholder:text-gray-500"
-              />
-              <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-emerald-500 text-base group-hover:text-emerald-600 transition-colors" />
+            
             </div>
           </div>
 
           {/* Right: Actions + Profile */}
           <div className="flex items-center gap-2">
             {/* Quick Actions */}
-            <button className="hidden sm:flex items-center gap-2 px-5 py-2.5 text-base font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+            <Link to='/faculty/add-course' className="hidden sm:flex items-center gap-2 px-5 py-2.5 text-base font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
               <FaPlusCircle className="text-lg" />
               <span className="hidden lg:inline">New Course</span>
-            </button>
+            </Link>
 
             {/* Messages */}
-            <button className="relative text-gray-600 hover:text-emerald-600 p-3 hover:bg-emerald-50 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
-              <FaEnvelope className="text-xl" />
-              <span className="absolute top-0.5 right-0.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-lg border-2 border-white">
-                3
-              </span>
-            </button>
-
-            {/* Notifications */}
-            <button className="relative text-gray-600 hover:text-emerald-600 p-3 hover:bg-emerald-50 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
-              <FaBell className="text-xl animate-pulse" />
-              <span className="absolute top-0.5 right-0.5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-lg border-2 border-white">
-                7
-              </span>
-            </button>
-
-            {/* Settings */}
-            <button className="hidden lg:block text-gray-600 hover:text-emerald-600 p-3 hover:bg-emerald-50 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
-              <FaCog className="text-xl hover:rotate-90 transition-transform duration-300" />
-            </button>
+           
 
             {/* Profile Dropdown */}
             <div className="relative ml-2">

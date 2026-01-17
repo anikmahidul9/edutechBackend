@@ -103,43 +103,14 @@ const AdminNavbar = () => {
           {/* Center: Search Bar */}
           <div className="hidden md:flex flex-1 max-w-lg mx-10">
             <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Search students, faculty, courses..."
-                className="w-full pl-12 pr-5 py-3 bg-gray-100 border border-gray-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
-              />
-              <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-base" />
+              
             </div>
           </div>
 
           {/* Right: Actions + Profile */}
           <div className="flex items-center gap-3">
             {/* Quick Actions */}
-            <button className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-base font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
-              <FaBook className="text-lg" />
-              <span className="hidden lg:inline">Add Course</span>
-            </button>
-
-            {/* Messages */}
-            <button className="relative text-gray-600 hover:text-indigo-600 p-2.5 hover:bg-gray-100 rounded-lg transition-colors">
-              <FaEnvelope className="text-xl" />
-              <span className="absolute top-1 right-1 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
-                5
-              </span>
-            </button>
-
-            {/* Notifications */}
-            <button className="relative text-gray-600 hover:text-indigo-600 p-2.5 hover:bg-gray-100 rounded-lg transition-colors">
-              <FaBell className="text-xl" />
-              <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
-                3
-              </span>
-            </button>
-
-            {/* Settings */}
-            <button className="hidden lg:block text-gray-600 hover:text-indigo-600 p-2.5 hover:bg-gray-100 rounded-lg transition-colors">
-              <FaCog className="text-xl" />
-            </button>
+        
 
             {/* Profile Dropdown */}
             <div className="relative ml-3">

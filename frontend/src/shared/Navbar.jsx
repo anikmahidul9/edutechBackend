@@ -27,12 +27,8 @@ const Navbar = () => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4">
           {/* Search Box */}
           <div className="relative w-full md:w-auto md:max-w-xs">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="w-full py-1.5 px-4 pr-10 rounded-lg bg-[#0F0B38] border border-white/30 text-white text-sm font-bold placeholder:font-normal placeholder:text-gray-300 focus:outline-none focus:bg-[#0E0A38] focus:border-purple-400 focus:shadow-[0_0_15px_rgba(168,85,247,0.6)] transition-all duration-300"
-            />
-            <FaSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white text-sm font-bold" />
+            
+            
           </div>
 
           {/* Contact Info & Social Media */}
@@ -174,15 +170,6 @@ const Navbar = () => {
 
             {/* Cart & Login */}
             <div className="flex items-center gap-4">
-              <button
-                className="relative text-gray-700 hover:text-[#FF630E] transition-colors duration-200"
-                aria-label="Shopping Cart"
-              >
-                <FaShoppingCart className="text-2xl" />
-                <span className="absolute -top-2 -right-2 bg-[#FF630E] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  0
-                </span>
-              </button>
 
               <Link
                 to="/student/login"

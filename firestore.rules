@@ -1,10 +1,75 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to create their own document, and read/update it.
+
+    /* =======================
+       USERS
+    ======================= */  
     match /users/{userId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null;
+
+      // Allow authenticated users to read and write to their own progress subcollection
+      match /progress/{courseId}/videos/{videoId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Allow authenticated users to write to their own enrolledCourses subcollection
+      match /enrolledCourses/{courseId} {
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    /* =======================
+       COURSES
+    ======================= */
+    match /courses/{courseId} {
+      allow read: if true;
+      allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'faculty';
+      allow update, delete: if request.auth != null && (request.auth.uid == resource.data.facultyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    /* =======================
+       ENROLLMENTS
+    ======================= */
+    match /enrollments/{enrollmentId} {
+      allow read, create, update: if request.auth != null && request.auth.uid == enrollmentId.split('_')[0];
+    }
+
+    /* =======================
+       QUIZZES (MCQ)
+    ======================= */
+    match /quizzes/{quizId} {
+      allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'faculty';
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)/my_courses/$(resource.data.courseId));
+      allow update, delete: if request.auth != null && (resource.data.facultyId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    /* =======================
+       WRITTEN EXAMS
+    ======================= */
+    match /writtenExams/{examId} {
+      allow read: if request.auth != null && (exists(/databases/$(database)/documents/users/$(request.auth.uid)/my_courses/$(resource.data.courseId)) || request.auth.uid == resource.data.facultyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin");
+      allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "faculty";
+      allow update, delete: if request.auth != null && (resource.data.facultyId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin");
+    }
+
+    /* =======================
+       QUIZ ATTEMPTS
+    ======================= */
+    match /quizAttempts/{attemptId} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.studentId;
+      allow read: if request.auth != null && request.auth.uid == resource.data.studentId;
+      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    /* =======================
+       WRITTEN EXAM SUBMISSIONS
+    ======================= */
+    match /writtenExamSubmissions/{submissionId} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.studentId;
+      allow read: if request.auth != null && request.auth.uid == resource.data.studentId;
+      allow read, update: if request.auth != null && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'faculty' || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
   }
 }

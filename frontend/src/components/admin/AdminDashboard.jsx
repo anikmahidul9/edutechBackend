@@ -196,7 +196,7 @@ const AdminDashboard = () => {
         totalStudents: studentsList.length,
         totalFaculty: facultyList.length,
         totalCourses: coursesList.length,
-        totalRevenue: totalRevenue,
+        totalRevenue: totalRevenue * 0.25, // Calculate 25% of the total revenue
         activeStudents,
         activeFaculty,
         totalEnrollments: totalEnrollmentsCount,
@@ -493,7 +493,9 @@ const AdminDashboard = () => {
                   <p className="text-xs text-emerald-600 font-semibold mb-1">
                     Total Revenue
                   </p>
-                  <p className="text-2xl font-bold text-emerald-900">$0</p>
+                  <p className="text-2xl font-bold text-emerald-900">
+                    ৳{stats.totalRevenue.toLocaleString()}
+                  </p>
                 </div>
                 <FaDollarSign className="text-3xl text-emerald-600 opacity-30" />
               </div>
@@ -505,7 +507,9 @@ const AdminDashboard = () => {
                   <p className="text-xs text-orange-600 font-semibold mb-1">
                     Completion Rate
                   </p>
-                  <p className="text-2xl font-bold text-orange-900">78%</p>
+                  <p className="text-2xl font-bold text-orange-900">
+                    N/A
+                  </p>
                 </div>
                 <FaTrophy className="text-3xl text-orange-600 opacity-30" />
               </div>

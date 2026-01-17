@@ -130,37 +130,14 @@ const StudentNavbar = () => {
           {/* Center: Search Bar */}
           <div className="hidden md:flex flex-1 max-w-md mx-8">
             <div className="relative w-full group">
-              <input
-                type="text"
-                placeholder="Search for courses, instructors, topics..."
-                className="w-full pl-12 pr-4 py-3 bg-white/80 border-2 border-blue-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:bg-white transition-all shadow-sm hover:shadow-md placeholder:text-gray-500"
-              />
-              <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-500 text-base group-hover:text-blue-600 transition-colors" />
+        
             </div>
           </div>
 
           {/* Right: Actions + Profile */}
           <div className="flex items-center gap-2">
             {/* Quick Actions */}
-            <Link to="/student/courses" className="hidden sm:flex items-center gap-2 px-5 py-2.5 text-base font-semibold text-white bg-gradient-to-r from-blue-500 to-sky-500 hover:from-blue-600 hover:to-sky-600 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-              <FaSearch className="text-lg" />
-              <span className="hidden lg:inline">Browse</span>
-            </Link>
-
-            {/* Messages */}
-            <button className="relative text-gray-600 hover:text-blue-600 p-3 hover:bg-blue-50 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
-              <FaEnvelope className="text-xl" />
-            </button>
-
-            {/* Notifications */}
-            <button className="relative text-gray-600 hover:text-blue-600 p-3 hover:bg-blue-50 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
-              <FaBell className="text-xl" />
-            </button>
-
-            {/* Settings */}
-            <button className="hidden lg:block text-gray-600 hover:text-blue-600 p-3 hover:bg-blue-50 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
-              <FaCog className="text-xl hover:rotate-90 transition-transform duration-300" />
-            </button>
+          
 
             {/* Profile Dropdown */}
             <div className="relative ml-2">
@@ -168,12 +145,27 @@ const StudentNavbar = () => {
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-2 hover:bg-blue-50 rounded-xl px-4 py-2.5 transition-all duration-200 border-2 border-blue-200 hover:border-blue-300 shadow-sm hover:shadow-md"
               >
-                <div className="h-10 w-10 bg-gradient-to-br from-blue-500 via-blue-600 to-sky-600 rounded-full flex items-center justify-center shadow-md ring-2 ring-blue-200">
-                  <FaGraduationCap className="text-white text-xl" />
-                </div>
-                <span className="hidden md:block text-base font-bold text-gray-800">
-                  Student
-                </span>
+                {userProfile ? (
+                  <>
+                    <img
+                      src={userProfile.photoURL || `https://i.pravatar.cc/150?u=${userProfile.email}`}
+                      alt="Profile"
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
+                    <span className="hidden md:block text-base font-bold text-gray-800">
+                      {userProfile.fullName}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-10 w-10 bg-gradient-to-br from-blue-500 via-blue-600 to-sky-600 rounded-full flex items-center justify-center shadow-md ring-2 ring-blue-200">
+                      <FaGraduationCap className="text-white text-xl" />
+                    </div>
+                    <span className="hidden md:block text-base font-bold text-gray-800">
+                      Student
+                    </span>
+                  </>
+                )}
               </button>
 
               {isProfileOpen && (

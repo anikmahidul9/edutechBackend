@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const paymentRoutes = require("./api/routes/paymentRoutes");
+const statsRoutes = require("./api/routes/statsRoutes");
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/payment", paymentRoutes);
+app.use("/api", statsRoutes);
 
 app.get("/", (req, res) => {
   res.send("EduTech backend is running!");
