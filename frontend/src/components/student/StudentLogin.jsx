@@ -203,12 +203,12 @@ const StudentLogin = () => {
                   Remember me
                 </label>
               </div>
-              <Link
+              {/* <Link
                 to="/forgot-password"
                 className="text-sm font-medium text-purple-600 hover:text-purple-700"
               >
                 Forgot password?
-              </Link>
+              </Link> */}
             </div>
 
             {/* Login Button */}
@@ -234,7 +234,7 @@ const StudentLogin = () => {
           </div>
 
           {/* Google Login */}
-          <button
+          {/* <button
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
@@ -242,7 +242,7 @@ const StudentLogin = () => {
           >
             <FaGoogle className="text-xl text-red-500" />
             Sign in with Google
-          </button>
+          </button> */}
 
           {/* Register Link */}
           <p className="mt-6 text-center text-sm text-gray-600">

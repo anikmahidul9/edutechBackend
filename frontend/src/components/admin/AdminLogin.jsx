@@ -79,39 +79,39 @@ const AdminLogin = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setError("");
-    setLoading(true);
+  // const handleGoogleLogin = async () => {
+  //   setError("");
+  //   setLoading(true);
 
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+  //   try {
+  //     const provider = new GoogleAuthProvider();
+  //     const result = await signInWithPopup(auth, provider);
+  //     const user = result.user;
 
-      // Check if user exists in Firestore
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        if (userData.role === "admin") {
-          navigate("/admin/dashboard");
-        } else {
-          setError(
-            "Access denied. This account does not have admin privileges."
-          );
-          await auth.signOut();
-        }
-      } else {
-        setError(
-          "Admin account not found. Please contact system administrator."
-        );
-        await auth.signOut();
-      }
-    } catch (error) {
-      setError(error.message || "Failed to authenticate with Google.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     // Check if user exists in Firestore
+  //     const userDoc = await getDoc(doc(db, "users", user.uid));
+  //     if (userDoc.exists()) {
+  //       const userData = userDoc.data();
+  //       if (userData.role === "admin") {
+  //         navigate("/admin/dashboard");
+  //       } else {
+  //         setError(
+  //           "Access denied. This account does not have admin privileges."
+  //         );
+  //         await auth.signOut();
+  //       }
+  //     } else {
+  //       setError(
+  //         "Admin account not found. Please contact system administrator."
+  //       );
+  //       await auth.signOut();
+  //     }
+  //   } catch (error) {
+  //     setError(error.message || "Failed to authenticate with Google.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center py-6 px-4 sm:px-6 lg:px-8">
@@ -227,12 +227,12 @@ const AdminLogin = () => {
                   Remember me
                 </label>
               </div>
-              <Link
+              {/* <Link
                 to="/admin/forgot-password"
                 className="text-sm font-semibold text-red-600 hover:text-red-700 transition-colors duration-200"
               >
                 Forgot password?
-              </Link>
+              </Link> */}
             </div>
 
             {/* Login Button */}
@@ -287,7 +287,7 @@ const AdminLogin = () => {
           </div>
 
           {/* Google Login */}
-          <button
+          {/* <button
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
@@ -295,7 +295,7 @@ const AdminLogin = () => {
           >
             <FaGoogle className="text-xl text-red-500" />
             Sign in with Google
-          </button>
+          </button> */}
 
           {/* Security Notice */}
           <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">

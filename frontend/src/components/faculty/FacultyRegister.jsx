@@ -676,7 +676,7 @@ const FacultyRegister = () => {
           </div>
 
           {/* Google Sign In */}
-          <button
+          {/* <button
             type="button"
             onClick={handleGoogleSignUp}
             disabled={loading}
@@ -684,7 +684,7 @@ const FacultyRegister = () => {
           >
             <FaGoogle className="text-xl text-red-500" />
             Sign up with Google
-          </button>
+          </button> */}
 
           {/* Login Link */}
           <div className="mt-6 text-center text-sm text-gray-600">

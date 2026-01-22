@@ -42,7 +42,7 @@ const Navbar = () => {
             {/* Phone */}
             <div className="flex items-center gap-2">
               <FaPhone className="text-sm font-bold" />
-              <span className="hidden sm:inline">+1 234 567 8900</span>
+              <span className="hidden sm:inline">01700055328</span>
             </div>
 
             {/* Social Media Icons */}
@@ -154,7 +154,7 @@ const Navbar = () => {
               >
                 Contact Us
               </NavLink>
-              <NavLink
+              {/* <NavLink
                 to="/testimonial"
                 className={({ isActive }) =>
                   `text-lg font-medium transition-colors duration-200 ${
@@ -165,7 +165,7 @@ const Navbar = () => {
                 }
               >
                 Testimonial
-              </NavLink>
+              </NavLink> */}
             </div>
 
             {/* Cart & Login */}
@@ -245,7 +245,7 @@ const Navbar = () => {
                 >
                   Contact Us
                 </NavLink>
-                <NavLink
+                {/* <NavLink
                   to="/testimonial"
                   className={({ isActive }) =>
                     `text-base font-medium py-2 px-2 rounded transition-all duration-200 ${
@@ -257,7 +257,7 @@ const Navbar = () => {
                   onClick={toggleMenu}
                 >
                   Testimonial
-                </NavLink>
+                </NavLink> */}
                 <Link
                   to="/student/login"
                   className="bg-[#FF630E] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#E5590D] transition-colors duration-200 text-center mt-2"

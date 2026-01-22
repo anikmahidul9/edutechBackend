@@ -236,12 +236,12 @@ const CourseDetail = () => {
               <p className="text-white/90 text-lg mb-6">{course.description}</p>
 
               <div className="flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <FaStar className="text-yellow-300" />
                   <span className="font-semibold">
                     {course.rating || 0} Rating
                   </span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-2">
                   <FaUsers />
                   <span>{course.enrolledStudents || 0} Students</span>
@@ -505,7 +505,7 @@ const CourseDetail = () => {
                     {course.enrolledStudents || 0} students
                   </span>
                 </div>
-
+{/* 
                 <div className="flex items-center justify-between py-3">
                   <span className="flex items-center gap-2 text-gray-600">
                     <FaStar className="text-emerald-600" />
@@ -514,7 +514,7 @@ const CourseDetail = () => {
                   <span className="font-semibold text-gray-900">
                     {course.rating || 0} / 5
                   </span>
-                </div>
+                </div> */}
               </div>
 
               <div className="mt-6 pt-6 border-t">

@@ -141,7 +141,7 @@ const Hcourses = () => {
                     </h3>
 
                     {/* Rating and Reviews */}
-                    <div className="flex items-center gap-2 mb-4">
+                    {/* <div className="flex items-center gap-2 mb-4">
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
                           <FaStar
@@ -164,7 +164,7 @@ const Hcourses = () => {
                           "120"}{" "}
                         reviews)
                       </span>
-                    </div>
+                    </div> */}
 
                     {/* Duration and Enrolled Students */}
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200">

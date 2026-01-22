@@ -72,7 +72,24 @@ const MyProgress = () => {
         const writtenSubmissionsRef = collection(db, "writtenExamSubmissions");
         const writtenSubmissionsQ = query(writtenSubmissionsRef, where("studentId", "==", user.uid));
         const writtenSubmissionsSnapshot = await getDocs(writtenSubmissionsQ);
-        setWrittenSubmissions(writtenSubmissionsSnapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+        const writtenSubmissionsData = writtenSubmissionsSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setWrittenSubmissions(writtenSubmissionsData);
+
+        // 4. Fetch all Written Exams to get their titles
+        if (writtenSubmissionsData.length > 0) {
+          const examIds = [...new Set(writtenSubmissionsData.map(s => s.examId))];
+          const writtenExamsRef = collection(db, "writtenExams");
+          const writtenExamsQ = query(writtenExamsRef, where("__name__", "in", examIds));
+          const writtenExamsSnapshot = await getDocs(writtenExamsQ);
+          const writtenExamsData = writtenExamsSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+          
+          // Add exam titles to submissions
+          const submissionsWithTitles = writtenSubmissionsData.map(submission => {
+            const exam = writtenExamsData.find(e => e.id === submission.examId);
+            return { ...submission, examTitle: exam ? exam.title : "Unknown Exam" };
+          });
+          setWrittenSubmissions(submissionsWithTitles);
+        }
 
       } catch (err) {
         console.error("Error fetching student progress data:", err);
@@ -246,25 +263,35 @@ const MyProgress = () => {
               return (
                 <div key={course.id} className="border border-gray-200 rounded-xl p-4 bg-gray-50">
                   <h3 className="text-lg font-bold text-gray-800 mb-3">{course.title}</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="flex items-center">
-                      <FaClipboardList className="text-indigo-600 mr-2" />
-                      <p className="text-gray-700">Quizzes: <span className="font-semibold">{courseQuizAttempts.length} attempted</span></p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-gray-700 font-semibold mb-2">Quiz Progress</p>
+                      <div className="flex items-center">
+                        <FaClipboardList className="text-indigo-600 mr-2" />
+                        <p className="text-gray-700">{courseQuizAttempts.length} attempted</p>
+                      </div>
+                      <div className="flex items-center">
+                        <FaCheckCircle className="text-green-600 mr-2" />
+                        <p className="text-gray-700">Score: {courseQuizScore} / {courseQuizTotalQuestions}</p>
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <FaCheckCircle className="text-green-600 mr-2" />
-                      <p className="text-gray-700">Quiz Score: <span className="font-semibold">{courseQuizScore} / {courseQuizTotalQuestions}</span></p>
-                    </div>
-                    <div className="flex items-center">
-                      <FaFilePdf className="text-red-600 mr-2" />
-                      <p className="text-gray-700">Written Exams: <span className="font-semibold">{courseWrittenSubmissions.length} submitted, {courseWrittenGradedCount} graded</span></p>
-                    </div>
-                    {courseWrittenGradedCount > 0 && (
-                        <div className="flex items-center">
-                            <FaClipboardList className="text-purple-600 mr-2" />
-                            <p className="text-gray-700">Written Exam Marks: <span className="font-semibold">{courseWrittenMarksSum} total</span></p>
+                    <div>
+                      <p className="text-gray-700 font-semibold mb-2">Written Exam Progress</p>
+                      <div className="flex items-center">
+                        <FaFilePdf className="text-red-600 mr-2" />
+                        <p className="text-gray-700">{courseWrittenSubmissions.length} submitted, {courseWrittenGradedCount} graded</p>
+                      </div>
+                      {courseWrittenGradedCount > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {courseWrittenSubmissions.filter(s => s.graded).map(sub => (
+                            <div key={sub.id} className="flex items-center text-sm">
+                              <FaCheckCircle className="text-purple-600 mr-2" />
+                              <p className="text-gray-700">{sub.examTitle}: <span className="font-bold">{sub.marks} marks</span></p>
+                            </div>
+                          ))}
                         </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               );

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { signOut } from "firebase/auth";
-import { auth } from "../../config/firebase";
+import { signOut, onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "../../config/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 import {
   FaBars,
   FaTimes,
@@ -24,7 +25,31 @@ import { MdDashboard } from "react-icons/md";
 const FacultyNavbar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const unsubscribeSnapshot = onSnapshot(userDocRef, (doc) => {
+          if (doc.exists()) {
+            setUserData(doc.data());
+          } else {
+            // Handle case where user data might not exist in Firestore
+            setUserData(null);
+          }
+        });
+        return () => unsubscribeSnapshot();
+      } else {
+        setUserData(null);
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -128,10 +153,14 @@ const FacultyNavbar = () => {
                 className="flex items-center gap-2 hover:bg-emerald-50 rounded-xl px-4 py-2.5 transition-all duration-200 border-2 border-emerald-200 hover:border-emerald-300 shadow-sm hover:shadow-md"
               >
                 <div className="h-10 w-10 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 rounded-full flex items-center justify-center shadow-md ring-2 ring-emerald-200">
-                  <FaChalkboardTeacher className="text-white text-xl" />
+                  {userData?.photoURL ? (
+                    <img src={userData.photoURL} alt="Profile" className="h-10 w-10 rounded-full object-cover" />
+                  ) : (
+                    <FaChalkboardTeacher className="text-white text-xl" />
+                  )}
                 </div>
                 <span className="hidden md:block text-base font-bold text-gray-800">
-                  Faculty
+                  {userData?.fullName || "Faculty"}
                 </span>
               </button>
 
@@ -139,9 +168,9 @@ const FacultyNavbar = () => {
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 border border-gray-200">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-semibold text-gray-900">
-                      Faculty Member
+                      {userData?.fullName || "Faculty Member"}
                     </p>
-                    <p className="text-xs text-gray-500">faculty@edutech.com</p>
+                    <p className="text-xs text-gray-500">{userData?.email || "faculty@edutech.com"}</p>
                   </div>
                   <Link
                     to="/faculty/profile"

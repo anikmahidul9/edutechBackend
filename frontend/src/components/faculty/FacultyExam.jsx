@@ -139,41 +139,51 @@ const FacultyExam = () => {
   // };
 
   const uploadPdfToCloudinary = async (file) => {
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", uploadPreset);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", uploadPreset); // Use imported uploadPreset
+      formData.append("resource_type", "raw"); // Explicitly set resource type for non-image files
 
-    // IMPORTANT: do NOT force resource_type
-    // Cloudinary will store PDF as image (which is correct)
-    const cloudinaryCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const cloudinaryCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/auto/upload`; // Corrected URL with /auto/upload
 
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/auto/upload`;
+      const response = await fetch(
+        uploadUrl,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
-    const response = await fetch(uploadUrl, {
-      method: "POST",
-      body: formData,
-    });
+      const data = await response.json();
+      console.log("Cloudinary response:", data);
 
-    const data = await response.json();
 
-    console.log("Cloudinary response:", data);
+      if (!response.ok) {
+        throw new Error(data.error?.message || "PDF upload failed");
+      }
 
-    if (!response.ok) {
-      throw new Error(data.error?.message || "PDF upload failed");
+      // --- Client-side URL Correction Workaround ---
+      // If Cloudinary's preset forces resource_type to 'image' for a PDF,
+      // we manually correct the URL to use the 'raw' delivery path.
+      let secureUrl = data.secure_url;
+      if (data.resource_type === "image" && data.format === "pdf") {
+        const rawUrl = secureUrl.replace('/image/upload/', '/raw/upload/');
+        return rawUrl;
+      }
+
+      return secureUrl;
+    } catch (uploadError) {
+      console.error("Cloudinary upload error:", uploadError);
+      setError(`Failed to upload PDF: ${uploadError.message}. 
+        Please check: 
+        1. Your Cloudinary upload preset exists and is named "${uploadPreset}".
+        2. The preset is set to "Unsigned" mode.
+        3. Your Cloudinary cloud name is correct in your .env file.`);
+      return null;
     }
-
-    // ✅ ALWAYS return the secure_url exactly as Cloudinary gives it
-    return data.secure_url;
-
-  } catch (error) {
-    console.error("Cloudinary upload error:", error);
-    setError(
-      "Failed to upload PDF. Please check your Cloudinary preset and try again."
-    );
-    return null;
-  }
-};
+  };
 
   
   const handleAddQuestion = () => {
@@ -452,6 +462,7 @@ const FacultyExam = () => {
         submissionRef,
         {
           marks: parseFloat(marks), // Store marks as a number
+          graded: true,
           gradedAt: serverTimestamp(),
         },
         { merge: true }
@@ -843,7 +854,7 @@ const FacultyExam = () => {
                                       {submission.studentName}
                                     </p>
                                     <a
-                                      href={submission.pdfUrl}
+                                      href={submission.answerPdfUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-blue-600 hover:underline text-sm flex items-center"

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { signOut } from "firebase/auth";
-import { auth } from "../../config/firebase";
+import { signOut, onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "../../config/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 import {
   FaBars,
   FaTimes,
@@ -22,7 +23,30 @@ import { MdDashboard } from "react-icons/md";
 const AdminNavbar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const unsubscribeSnapshot = onSnapshot(userDocRef, (doc) => {
+          if (doc.exists()) {
+            setUserData(doc.data());
+          } else {
+            setUserData(null);
+          }
+        });
+        return () => unsubscribeSnapshot();
+      } else {
+        setUserData(null);
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -119,10 +143,14 @@ const AdminNavbar = () => {
                 className="flex items-center gap-3 hover:bg-gray-100 rounded-lg px-4 py-2.5 transition-colors border border-gray-200"
               >
                 <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <FaUserCircle className="text-white text-xl" />
+                  {userData?.photoURL ? (
+                    <img src={userData.photoURL} alt="Profile" className="h-10 w-10 rounded-full object-cover" />
+                  ) : (
+                    <FaUserCircle className="text-white text-xl" />
+                  )}
                 </div>
                 <span className="hidden md:block text-base font-semibold text-gray-700">
-                  Admin
+                  {userData?.fullName || "Admin"}
                 </span>
               </button>
 
@@ -130,9 +158,9 @@ const AdminNavbar = () => {
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 border border-gray-200">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-semibold text-gray-900">
-                      Admin User
+                      {userData?.fullName || "Admin User"}
                     </p>
-                    <p className="text-xs text-gray-500">admin@edutech.com</p>
+                    <p className="text-xs text-gray-500">{userData?.email || "admin@edutech.com"}</p>
                   </div>
                   <Link
                     to="/admin/profile"

@@ -3,6 +3,7 @@ import { auth, db, storage } from "../../config/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { onAuthStateChanged } from "firebase/auth";
+import { uploadPreset } from "../../config/cloudinary";
 import {
   FaBook,
   FaVideo,
@@ -18,6 +19,7 @@ import {
   FaTag,
   FaCheckCircle,
   FaInfoCircle,
+  FaFilePdf
 } from "react-icons/fa";
 
 const FacultyAddCourse = () => {
@@ -27,6 +29,7 @@ const FacultyAddCourse = () => {
   const [error, setError] = useState("");
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
+  const [resourceFile, setResourceFile] = useState(null);
 
   const [courseData, setCourseData] = useState({
     title: "",
@@ -90,12 +93,50 @@ const FacultyAddCourse = () => {
     });
   };
 
+  const uploadPdfToCloudinary = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+      formData.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${
+          import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+        }/auto/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("PDF upload failed");
+      }
+
+      const data = await response.json();
+      return data.secure_url;
+    } catch (uploadError) {
+      console.error("Cloudinary upload error:", uploadError);
+      setError("Failed to upload PDF.");
+      return null;
+    }
+  };
+
   const handleThumbnailChange = (e) => {
     const url = e.target.value;
     setCourseData({
       ...courseData,
       thumbnailURL: url,
     });
+  };
+
+  const handleResourceFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setResourceFile(e.target.files[0]);
+    } else {
+      setResourceFile(null);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -120,8 +161,19 @@ const FacultyAddCourse = () => {
     setError("");
 
     try {
-      // Add course to Firestore (no file upload needed)
-      console.log("Adding course to Firestore...");
+      let resourceUrl = "";
+      if (resourceFile) {
+        const uploadedUrl = await uploadPdfToCloudinary(resourceFile);
+        if (uploadedUrl) {
+          resourceUrl = uploadedUrl;
+        } else {
+          // Error is already set by uploadPdfToCloudinary
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Add course to Firestore
       await addDoc(collection(db, "courses"), {
         ...courseData,
         facultyId: userId,
@@ -129,6 +181,7 @@ const FacultyAddCourse = () => {
         rating: 0,
         reviews: [],
         status: "pending",
+        resourceUrl: resourceUrl, // Add resourceUrl to the document
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -151,6 +204,7 @@ const FacultyAddCourse = () => {
       });
       setThumbnailFile(null);
       setThumbnailPreview(null);
+      setResourceFile(null); // Reset resource file
 
       // Hide success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000);
@@ -483,6 +537,31 @@ const FacultyAddCourse = () => {
           </div>
         </div>
 
+        {/* Course Resource */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <FaFilePdf className="text-emerald-600" />
+            Course Resource (PDF)
+          </h2>
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Upload Resource PDF (Optional)
+            </label>
+            <input
+              type="file"
+              name="resourceFile"
+              accept="application/pdf"
+              onChange={handleResourceFileChange}
+              className="w-full px-4 py-3 border-2 border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+            />
+            {resourceFile && (
+              <p className="text-sm text-gray-500 mt-2">
+                Selected: {resourceFile.name}
+              </p>
+            )}
+          </div>
+        </div>
+        
         {/* Submit Button */}
         <div className="flex items-center justify-end gap-4">
           <button

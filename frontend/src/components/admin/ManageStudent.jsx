@@ -63,9 +63,18 @@ const ManageStudent = () => {
         where("role", "==", "student")
       );
       const querySnapshot = await getDocs(studentsQuery);
-      const studentsList = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      const studentsList = await Promise.all(querySnapshot.docs.map(async (doc) => {
+        const studentData = {
+          id: doc.id,
+          ...doc.data(),
+        };
+        const enrollmentsQuery = query(
+          collection(db, "enrollments"),
+          where("userId", "==", doc.id)
+        );
+        const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+        studentData.enrolledCount = enrollmentsSnapshot.size;
+        return studentData;
       }));
 
       setStudents(studentsList);
@@ -81,7 +90,7 @@ const ManageStudent = () => {
         activeStudents: activeCount,
         inactiveStudents: studentsList.length - activeCount,
         totalEnrollments: studentsList.reduce(
-          (sum, s) => sum + (s.enrolledCourses?.length || 0),
+          (sum, s) => sum + s.enrolledCount,
           0
         ),
       });
@@ -288,9 +297,9 @@ const ManageStudent = () => {
                   <th className="px-6 py-4 text-left text-sm font-semibold">
                     Phone
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">
+                  {/* <th className="px-6 py-4 text-left text-sm font-semibold">
                     Student ID
-                  </th>
+                  </th> */}
                   <th className="px-6 py-4 text-left text-sm font-semibold">
                     Enrolled Courses
                   </th>
@@ -349,16 +358,16 @@ const ManageStudent = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    {/* <td className="px-6 py-4">
                       <span className="font-mono text-sm text-gray-700">
                         {student.studentId || "N/A"}
                       </span>
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <FaBook className="text-blue-600" />
                         <span className="text-sm font-semibold text-gray-900">
-                          {student.enrolledCourses?.length || 0}
+                          {student.enrolledCount || 0}
                         </span>
                       </div>
                     </td>
@@ -442,9 +451,9 @@ const ManageStudent = () => {
                   <h4 className="text-2xl font-bold text-gray-900 mb-1">
                     {selectedStudent.fullName}
                   </h4>
-                  <p className="text-indigo-600 font-semibold mb-2">
+                  {/* <p className="text-indigo-600 font-semibold mb-2">
                     Student ID: {selectedStudent.studentId || "N/A"}
-                  </p>
+                  </p> */}
                   <span
                     className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
                       (selectedStudent.status || "active").toLowerCase() ===
@@ -534,7 +543,7 @@ const ManageStudent = () => {
                           Enrolled Courses
                         </p>
                         <p className="text-2xl font-bold text-blue-900">
-                          {selectedStudent.enrolledCourses?.length || 0}
+                          {selectedStudent.enrolledCount || 0}
                         </p>
                       </div>
                     </div>

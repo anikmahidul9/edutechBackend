@@ -251,7 +251,7 @@ const AdminProfile = () => {
       )}
 
       {/* Header Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -299,7 +299,7 @@ const AdminProfile = () => {
             <FaChartLine className="text-5xl text-white/30" />
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Left Column - Profile Card */}

@@ -249,7 +249,7 @@ const ManageCourse = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+        {/* <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm font-semibold mb-1">
@@ -261,7 +261,7 @@ const ManageCourse = () => {
             </div>
             <FaStar className="text-4xl text-yellow-500 opacity-20" />
           </div>
-        </div>
+        </div> */}
 
         <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-600">
           <div className="flex items-center justify-between">
@@ -355,9 +355,9 @@ const ManageCourse = () => {
                   <th className="px-6 py-4 text-left text-sm font-semibold">
                     Students
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">
+                  {/* <th className="px-6 py-4 text-left text-sm font-semibold">
                     Rating
-                  </th>
+                  </th> */}
                   <th className="px-6 py-4 text-left text-sm font-semibold">
                     Videos
                   </th>
@@ -432,14 +432,14 @@ const ManageCourse = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    {/* <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <FaStar className="text-yellow-500" />
                         <span className="text-sm font-semibold text-gray-900">
                           {course.rating || 0}
                         </span>
                       </div>
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <FaVideo className="text-purple-600" />
@@ -571,7 +571,7 @@ const ManageCourse = () => {
                     </div>
                   </div>
 
-                  <div className="bg-yellow-50 rounded-xl p-4 border-2 border-yellow-200">
+                  {/* <div className="bg-yellow-50 rounded-xl p-4 border-2 border-yellow-200">
                     <div className="flex items-center gap-3 mb-2">
                       <FaStar className="text-2xl text-yellow-500" />
                       <div>
@@ -583,7 +583,7 @@ const ManageCourse = () => {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
                   <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200">
                     <div className="flex items-center gap-3 mb-2">

@@ -589,7 +589,7 @@ const StudentRegister = () => {
           </div>
 
           {/* Google Sign Up */}
-          <button
+          {/* <button
             type="button"
             onClick={handleGoogleSignUp}
             disabled={loading}
@@ -597,7 +597,7 @@ const StudentRegister = () => {
           >
             <FaGoogle className="text-2xl text-red-500" />
             <span className="text-base">Sign up with Google</span>
-          </button>
+          </button> */}
 
           {/* Login Link */}
           <p className="mt-6 text-center text-base text-gray-600">

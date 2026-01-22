@@ -140,10 +140,10 @@ const FacultyDashboard = () => {
             <div className="bg-emerald-100 p-3 rounded-lg">
               <FaBook className="text-2xl text-emerald-600" />
             </div>
-            <span className="flex items-center gap-1 text-green-600 text-sm font-semibold">
+            {/* <span className="flex items-center gap-1 text-green-600 text-sm font-semibold">
               <FaArrowUp />
               12%
-            </span>
+            </span> */}
           </div>
           <h3 className="text-gray-600 text-sm font-semibold mb-1">
             Total Courses
@@ -160,10 +160,10 @@ const FacultyDashboard = () => {
             <div className="bg-blue-100 p-3 rounded-lg">
               <FaUsers className="text-2xl text-blue-600" />
             </div>
-            <span className="flex items-center gap-1 text-green-600 text-sm font-semibold">
+            {/* <span className="flex items-center gap-1 text-green-600 text-sm font-semibold">
               <FaArrowUp />
               8%
-            </span>
+            </span> */}
           </div>
           <h3 className="text-gray-600 text-sm font-semibold mb-1">
             Total Students
@@ -175,7 +175,7 @@ const FacultyDashboard = () => {
         </div>
 
         {/* Average Rating */}
-        <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow border-l-4 border-yellow-500">
+        {/* <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow border-l-4 border-yellow-500">
           <div className="flex items-center justify-between mb-4">
             <div className="bg-yellow-100 p-3 rounded-lg">
               <FaStar className="text-2xl text-yellow-500" />
@@ -193,7 +193,7 @@ const FacultyDashboard = () => {
             <span className="text-lg text-gray-500">/ 5.0</span>
           </p>
           <p className="text-xs text-gray-500 mt-2">Course ratings</p>
-        </div>
+        </div> */}
 
         {/* Total Videos */}
         <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow border-l-4 border-purple-600">
@@ -201,10 +201,10 @@ const FacultyDashboard = () => {
             <div className="bg-purple-100 p-3 rounded-lg">
               <FaVideo className="text-2xl text-purple-600" />
             </div>
-            <span className="flex items-center gap-1 text-green-600 text-sm font-semibold">
+            {/* <span className="flex items-center gap-1 text-green-600 text-sm font-semibold">
               <FaArrowUp />
               15%
-            </span>
+            </span> */}
           </div>
           <h3 className="text-gray-600 text-sm font-semibold mb-1">
             Total Videos
@@ -329,10 +329,10 @@ const FacultyDashboard = () => {
                     <FaUsers className="text-blue-600" />
                     {course.enrolledStudents || 0}
                   </span>
-                  <span className="flex items-center gap-1 text-gray-600">
+                  {/* <span className="flex items-center gap-1 text-gray-600">
                     <FaStar className="text-yellow-500" />
                     {course.rating || 0}
-                  </span>
+                  </span> */}
                   <span className="flex items-center gap-1 text-gray-600">
                     <FaVideo className="text-purple-600" />
                     {course.videos?.length || 0}

@@ -143,7 +143,7 @@ const FacultyMyCourses = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-xl p-6 shadow-lg">
+        {/* <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-xl p-6 shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-yellow-100 text-sm mb-1">Avg Rating</p>
@@ -160,7 +160,7 @@ const FacultyMyCourses = () => {
             </div>
             <FaStar className="text-5xl text-yellow-200 opacity-50" />
           </div>
-        </div>
+        </div> */}
 
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
           <div className="flex items-center justify-between">
@@ -237,10 +237,10 @@ const FacultyMyCourses = () => {
                     <FaUsers />
                     <span>{course.enrolledStudents || 0}</span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  {/* <div className="flex items-center gap-1">
                     <FaStar className="text-yellow-500" />
                     <span>{course.rating || 0}</span>
-                  </div>
+                  </div> */}
                   <div className="flex items-center gap-1">
                     <FaVideo />
                     <span>

@@ -3,6 +3,7 @@ import { auth, db } from "../../config/firebase";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useParams, useNavigate } from "react-router-dom";
+import { uploadPreset } from "../../config/cloudinary";
 import {
   FaBook,
   FaImage,
@@ -47,6 +48,7 @@ const FacultyEditCourse = () => {
     url: "",
     duration: "",
   });
+  const [resourceFile, setResourceFile] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -91,6 +93,36 @@ const FacultyEditCourse = () => {
     }
   };
 
+  const uploadPdfToCloudinary = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+      formData.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${
+          import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+        }/auto/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("PDF upload failed");
+      }
+
+      const data = await response.json();
+      return data.secure_url;
+    } catch (uploadError) {
+      console.error("Cloudinary upload error:", uploadError);
+      setError("Failed to upload PDF.");
+      return null;
+    }
+  };
+
   const handleChange = (e) => {
     setCourseData({
       ...courseData,
@@ -103,6 +135,14 @@ const FacultyEditCourse = () => {
       ...videoInput,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleResourceFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setResourceFile(e.target.files[0]);
+    } else {
+      setResourceFile(null);
+    }
   };
 
   const addVideoToList = () => {
@@ -147,9 +187,21 @@ const FacultyEditCourse = () => {
     setError("");
 
     try {
+      let resourceUrl = courseData.resourceUrl || "";
+      if (resourceFile) {
+        const uploadedUrl = await uploadPdfToCloudinary(resourceFile);
+        if (uploadedUrl) {
+          resourceUrl = uploadedUrl;
+        } else {
+          setSaving(false);
+          return;
+        }
+      }
+
       const courseRef = doc(db, "courses", id);
       await updateDoc(courseRef, {
         ...courseData,
+        resourceUrl: resourceUrl,
         updatedAt: serverTimestamp(),
       });
 
@@ -491,6 +543,36 @@ const FacultyEditCourse = () => {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Course Resource */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <FaFilePdf className="text-emerald-600" />
+            Course Resource (PDF)
+          </h2>
+          <div className="flex-1">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Upload Resource PDF (Optional)
+            </label>
+            <input
+              type="file"
+              name="resourceFile"
+              accept="application/pdf"
+              onChange={handleResourceFileChange}
+              className="w-full px-4 py-3 border-2 border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+            />
+            {resourceFile && (
+              <p className="text-sm text-gray-500 mt-2">
+                Selected: {resourceFile.name}
+              </p>
+            )}
+            {courseData.resourceUrl && !resourceFile && (
+              <p className="text-sm text-gray-500 mt-2">
+                Current resource: <a href={courseData.resourceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{courseData.resourceUrl}</a>
+              </p>
             )}
           </div>
         </div>

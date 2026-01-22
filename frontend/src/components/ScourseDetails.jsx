@@ -20,6 +20,7 @@ import {
   FaPlay,
   FaExpand,
   FaCheck,
+  FaFilePdf
 } from "react-icons/fa";
 import {
   doc,
@@ -712,12 +713,12 @@ const ScourseDetails = () => {
               </p>
 
               <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <FaStar className="text-yellow-300" />
                   <span className="font-semibold">
                     {course.rating || 0} Rating
                   </span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-2">
                   <FaUsers />
                   <span>{course.enrolledStudents || 0} Students</span>
@@ -1078,7 +1079,24 @@ const ScourseDetails = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between py-3">
+                {isEnrolled && course.resourceUrl && (
+                  <div className="flex items-center justify-between py-3 border-b">
+                    <span className="flex items-center gap-2 text-gray-600 text-sm sm:text-base">
+                      <FaFilePdf className="text-emerald-600" />
+                      Resource
+                    </span>
+                    <a
+                      href={course.resourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-blue-600 hover:underline text-sm sm:text-base"
+                    >
+                      Download PDF
+                    </a>
+                  </div>
+                )}
+
+                {/* <div className="flex items-center justify-between py-3">
                   <span className="flex items-center gap-2 text-gray-600 text-sm sm:text-base">
                     <FaStar className="text-emerald-600" />
                     Rating
@@ -1086,7 +1104,7 @@ const ScourseDetails = () => {
                   <span className="font-semibold text-gray-900 text-sm sm:text-base">
                     {course.rating || 0} / 5
                   </span>
-                </div>
+                </div> */}
               </div>
 
               <div className="mt-6 pt-6 border-t">
