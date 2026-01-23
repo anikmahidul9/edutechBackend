@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { db, auth } from "../config/firebase"; // Import auth
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth"; // Import onAuthStateChanged
-import axios from "axios"; // Import axios
+import { db, auth } from "../config/firebase";
+import { 
+  doc, 
+  getDoc, 
+  collection, 
+  query, 
+  where, 
+  getDocs 
+} from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import axios from "axios";
 import {
   FaArrowLeft,
   FaBook,
@@ -18,7 +25,8 @@ import {
   FaSpinner,
   FaYoutube,
   FaCheckCircle,
-  FaLock, // Added FaLock
+  FaLock,
+  FaChalkboardTeacher
 } from "react-icons/fa";
 
 const CourseDetail = () => {
@@ -28,12 +36,13 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedVideo, setSelectedVideo] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null); // State for current user
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // State for login status
-  const [isEnrolling, setIsEnrolling] = useState(false); // State for enrollment loading
-  const [isEnrolled, setIsEnrolled] = useState(false); // State for enrollment status
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isEnrolling, setIsEnrolling] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isFaculty, setIsFaculty] = useState(false); // New state for faculty check
 
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL; // Assuming a .env for backend URL
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     // Check auth state
@@ -41,14 +50,16 @@ const CourseDetail = () => {
       if (user) {
         setCurrentUser(user);
         setIsLoggedIn(true);
+        checkUserRole(user.uid); // Check if user is faculty
       } else {
         setCurrentUser(null);
         setIsLoggedIn(false);
+        setIsFaculty(false);
       }
     });
 
     fetchCourse();
-    return () => unsubscribe(); // Cleanup auth listener
+    return () => unsubscribe();
   }, [id]);
 
   useEffect(() => {
@@ -56,6 +67,22 @@ const CourseDetail = () => {
       checkEnrollmentStatus();
     }
   }, [currentUser, course]);
+
+  // Function to check if user is faculty
+  const checkUserRole = async (userId) => {
+    try {
+      const userDoc = await getDoc(doc(db, "users", userId));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        // Assuming you have a 'role' field in users collection
+        // Possible values: 'student', 'faculty', 'admin', etc.
+        setIsFaculty(userData.role === "faculty" || userData.role === "admin");
+      }
+    } catch (error) {
+      console.error("Error checking user role:", error);
+      setIsFaculty(false);
+    }
+  };
 
   const fetchCourse = async () => {
     try {
@@ -102,34 +129,33 @@ const CourseDetail = () => {
 
   const handleEnroll = async () => {
     if (!isLoggedIn) {
-      navigate("/login"); // Redirect to login if not logged in
+      navigate("/login");
       return;
     }
-    if (isEnrolled) {
-        // Optionally show a message that they are already enrolled
-        return;
+    if (isEnrolled || isFaculty) {
+      return;
     }
 
     setIsEnrolling(true);
     try {
-      const idToken = await currentUser.getIdToken(); // Get Firebase ID token
+      const idToken = await currentUser.getIdToken();
 
       const response = await axios.post(
         `${BACKEND_URL}/api/payment/initiate`,
         {
           courseId: course.id,
           userId: currentUser.uid,
-          amount: course.price, // Assuming course has a price field
+          amount: course.price,
         },
         {
           headers: {
-            Authorization: `Bearer ${idToken}`, // Pass token in header
+            Authorization: `Bearer ${idToken}`,
           },
         }
       );
 
       if (response.data && response.data.url) {
-        window.location.replace(response.data.url); // Redirect to SSL Commerz
+        window.location.replace(response.data.url);
       } else {
         setError("Failed to initiate payment. No URL received.");
       }
@@ -146,19 +172,13 @@ const CourseDetail = () => {
   const getYouTubeEmbedUrl = (url) => {
     if (!url) return null;
 
-    // Extract video ID from various YouTube URL formats
     let videoId = null;
 
-    // Format: https://www.youtube.com/watch?v=VIDEO_ID
     if (url.includes("watch?v=")) {
       videoId = url.split("watch?v=")[1]?.split("&")[0];
-    }
-    // Format: https://youtu.be/VIDEO_ID
-    else if (url.includes("youtu.be/")) {
+    } else if (url.includes("youtu.be/")) {
       videoId = url.split("youtu.be/")[1]?.split("?")[0];
-    }
-    // Format: https://www.youtube.com/embed/VIDEO_ID
-    else if (url.includes("embed/")) {
+    } else if (url.includes("embed/")) {
       videoId = url.split("embed/")[1]?.split("?")[0];
     }
 
@@ -168,13 +188,17 @@ const CourseDetail = () => {
   const getPlaylistEmbedUrl = (url) => {
     if (!url) return null;
 
-    // Extract playlist ID
     if (url.includes("list=")) {
       const playlistId = url.split("list=")[1]?.split("&")[0];
       return `https://www.youtube.com/embed/videoseries?list=${playlistId}`;
     }
 
     return url;
+  };
+
+  // Check if user has access to course content
+  const hasAccess = () => {
+    return isEnrolled || course.price === "Free" || isFaculty;
   };
 
   if (loading) {
@@ -224,6 +248,12 @@ const CourseDetail = () => {
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
               <div className="flex items-center gap-2 mb-3">
+                {isFaculty && (
+                  <span className="px-3 py-1 bg-yellow-500 rounded-full text-sm font-semibold flex items-center gap-1">
+                    <FaChalkboardTeacher />
+                    Faculty Access
+                  </span>
+                )}
                 <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-semibold">
                   {course.category}
                 </span>
@@ -236,12 +266,6 @@ const CourseDetail = () => {
               <p className="text-white/90 text-lg mb-6">{course.description}</p>
 
               <div className="flex items-center gap-6 text-sm">
-                {/* <div className="flex items-center gap-2">
-                  <FaStar className="text-yellow-300" />
-                  <span className="font-semibold">
-                    {course.rating || 0} Rating
-                  </span>
-                </div> */}
                 <div className="flex items-center gap-2">
                   <FaUsers />
                   <span>{course.enrolledStudents || 0} Students</span>
@@ -284,6 +308,11 @@ const CourseDetail = () => {
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <FaPlayCircle />
                   {selectedVideo ? selectedVideo.title : "Course Content"}
+                  {isFaculty && (
+                    <span className="text-sm bg-yellow-500 px-2 py-1 rounded ml-2">
+                      Faculty Preview
+                    </span>
+                  )}
                 </h2>
               </div>
 
@@ -291,8 +320,7 @@ const CourseDetail = () => {
                 className="relative bg-black"
                 style={{ paddingBottom: "56.25%" }}
               >
-                {/* Conditionally render video player based on enrollment */}
-                {isEnrolled || course.price === "Free" ? ( // Allow free courses or enrolled students to watch
+                {hasAccess() ? (
                   selectedVideo ? (
                     <iframe
                       className="absolute top-0 left-0 w-full h-full"
@@ -330,10 +358,15 @@ const CourseDetail = () => {
                 )}
               </div>
 
-              {selectedVideo && (
+              {selectedVideo && hasAccess() && (
                 <div className="p-6 border-t">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
                     {selectedVideo.title}
+                    {isFaculty && (
+                      <span className="text-sm text-yellow-600 ml-2">
+                        (Faculty Preview)
+                      </span>
+                    )}
                   </h3>
                   {selectedVideo.duration && (
                     <p className="text-sm text-gray-600 flex items-center gap-2">
@@ -351,18 +384,23 @@ const CourseDetail = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <FaVideo className="text-emerald-600" />
                   Course Videos ({course.videos.length})
+                  {isFaculty && (
+                    <span className="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded ml-2">
+                      Full Faculty Access
+                    </span>
+                  )}
                 </h2>
                 <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                   {course.videos.map((video, index) => (
                     <button
                       key={video.id || index}
-                      onClick={() => (isEnrolled || course.price === "Free" ? setSelectedVideo(video) : null)} // Only allow if enrolled or free
+                      onClick={() => hasAccess() ? setSelectedVideo(video) : null}
                       className={`w-full text-left p-4 rounded-lg transition-all ${
                         selectedVideo?.id === video.id
                           ? "bg-emerald-100 border-2 border-emerald-600"
                           : "bg-gray-50 hover:bg-gray-100 border-2 border-transparent"
-                      } ${!(isEnrolled || course.price === "Free") && "cursor-not-allowed opacity-60"}`} // Styling for locked videos
-                      disabled={!(isEnrolled || course.price === "Free")}
+                      } ${!hasAccess() && "cursor-not-allowed opacity-60"}`}
+                      disabled={!hasAccess()}
                     >
                       <div className="flex items-center gap-4">
                         <div
@@ -381,6 +419,11 @@ const CourseDetail = () => {
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-900">
                             {video.title}
+                            {isFaculty && (
+                              <span className="text-xs text-yellow-600 ml-2">
+                                (Preview)
+                              </span>
+                            )}
                           </h4>
                           {video.duration && (
                             <p className="text-sm text-gray-600 flex items-center gap-1">
@@ -426,28 +469,35 @@ const CourseDetail = () => {
                 <div className="text-4xl font-bold text-emerald-600 mb-2">
                   {course.price || "Free"}
                 </div>
-                {isEnrolled ? (
-                    <button
-                        className="w-full px-6 py-3 bg-gray-400 text-white rounded-lg font-semibold cursor-not-allowed"
-                        disabled
-                    >
-                        Already Enrolled
-                    </button>
+                
+                {/* Enrollment Button Logic */}
+                {isFaculty ? (
+                  <div className="w-full px-6 py-3 bg-yellow-100 text-yellow-800 rounded-lg font-semibold flex items-center justify-center gap-2">
+                    <FaChalkboardTeacher />
+                    Faculty Access Granted
+                  </div>
+                ) : isEnrolled ? (
+                  <button
+                    className="w-full px-6 py-3 bg-gray-400 text-white rounded-lg font-semibold cursor-not-allowed"
+                    disabled
+                  >
+                    Already Enrolled
+                  </button>
                 ) : !isLoggedIn ? (
-                    <button
-                        onClick={() => navigate("/login")}
-                        className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
-                    >
-                        Login to Enroll
-                    </button>
+                  <button
+                    onClick={() => navigate("/login")}
+                    className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
+                  >
+                    Login to Enroll
+                  </button>
                 ) : (
-                    <button
-                        onClick={handleEnroll}
-                        className="w-full px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl"
-                        disabled={isEnrolling}
-                    >
-                        {isEnrolling ? <FaSpinner className="animate-spin inline-block mr-2" /> : "Enroll Now"}
-                    </button>
+                  <button
+                    onClick={handleEnroll}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl"
+                    disabled={isEnrolling}
+                  >
+                    {isEnrolling ? <FaSpinner className="animate-spin inline-block mr-2" /> : "Enroll Now"}
+                  </button>
                 )}
               </div>
 
@@ -505,16 +555,22 @@ const CourseDetail = () => {
                     {course.enrolledStudents || 0} students
                   </span>
                 </div>
-{/* 
-                <div className="flex items-center justify-between py-3">
-                  <span className="flex items-center gap-2 text-gray-600">
-                    <FaStar className="text-emerald-600" />
-                    Rating
-                  </span>
-                  <span className="font-semibold text-gray-900">
-                    {course.rating || 0} / 5
-                  </span>
-                </div> */}
+                
+                {/* User Status Info */}
+                {isLoggedIn && (
+                  <div className="flex items-center justify-between py-3 border-b">
+                    <span className="flex items-center gap-2 text-gray-600">
+                      <FaChalkboardTeacher className="text-emerald-600" />
+                      Your Status
+                    </span>
+                    <span className={`font-semibold ${
+                      isFaculty ? "text-yellow-600" : 
+                      isEnrolled ? "text-green-600" : "text-gray-900"
+                    }`}>
+                      {isFaculty ? "Faculty" : isEnrolled ? "Enrolled" : "Not Enrolled"}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 pt-6 border-t">

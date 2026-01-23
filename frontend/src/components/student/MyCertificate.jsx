@@ -34,7 +34,7 @@ const MyCertificate = () => {
           return;
         }
 
-        // 2. Fetch enrolled course IDs
+        // 2. Fetch enrolled courses and their progress
         const myCoursesRef = collection(db, "users", user.uid, "my_courses");
         const myCoursesSnapshot = await getDocs(myCoursesRef);
         const enrolledCourseIds = myCoursesSnapshot.docs.map((d) => d.id);
@@ -45,62 +45,31 @@ const MyCertificate = () => {
           return;
         }
 
-        // 3. Fetch details of enrolled courses
-        const coursesRef = collection(db, "courses");
-        const coursesQ = query(coursesRef, where("__name__", "in", enrolledCourseIds));
-        const coursesSnapshot = await getDocs(coursesQ);
-        const coursesDetails = coursesSnapshot.docs.map((d) => ({
-          id: d.id,
-          title: d.data().title,
-          instructor: d.data().facultyName || "N/A", // Assuming facultyName is stored in course
-        }));
+        const completedCourseDetails = [];
+        for (const courseId of enrolledCourseIds) {
+          const enrollmentDocRef = doc(db, "enrollments", `${user.uid}_${courseId}`);
+          const enrollmentDoc = await getDoc(enrollmentDocRef);
 
-        // 4. Fetch all quizzes for these courses
-        const quizzesRef = collection(db, "quizzes");
-        const quizzesQ = query(quizzesRef, where("courseId", "in", enrolledCourseIds));
-        const quizzesSnapshot = await getDocs(quizzesQ);
-        const quizzesData = quizzesSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+          if (enrollmentDoc.exists() && enrollmentDoc.data().progress === 100) {
+            const courseDocRef = doc(db, "courses", courseId);
+            const courseDoc = await getDoc(courseDocRef);
 
-        // 5. Fetch all quiz attempts by the student
-        const quizAttemptsRef = collection(db, "quizAttempts");
-        const quizAttemptsQ = query(quizAttemptsRef, where("studentId", "==", user.uid));
-        const quizAttemptsSnapshot = await getDocs(quizAttemptsQ);
-        const quizAttemptsData = quizAttemptsSnapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-
-        // 6. Determine certificate eligibility
-        const eligibleCourses = [];
-        coursesDetails.forEach((course) => {
-          const courseQuizzes = quizzesData.filter((q) => q.courseId === course.id);
-          const passedQuizzes = new Set(); // Use Set to count unique quizzes passed
-
-          quizAttemptsData.forEach((attempt) => {
-            if (attempt.courseId === course.id) {
-              const quiz = courseQuizzes.find((q) => q.id === attempt.quizId);
-              if (quiz) {
-                const scorePercentage = (attempt.score / attempt.totalQuestions) * 100;
-                if (scorePercentage >= 60) {
-                  passedQuizzes.add(attempt.quizId);
-                }
-              }
+            if (courseDoc.exists()) {
+              completedCourseDetails.push({
+                courseId: courseDoc.id,
+                courseTitle: courseDoc.data().title,
+                instructor: courseDoc.data().facultyName || "N/A",
+                completionDate: new Date().toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }), // Placeholder for actual completion date
+              });
             }
-          });
-
-          if (passedQuizzes.size >= 3) {
-            // Check if student has achieved >= 60% on at least 3 unique quizzes for this course
-            eligibleCourses.push({
-              courseId: course.id,
-              courseTitle: course.title,
-              instructor: course.instructor,
-              completionDate: new Date().toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              }), // Placeholder for actual completion date
-            });
           }
-        });
+        }
 
-        setEligibleCertificates(eligibleCourses);
+        setEligibleCertificates(completedCourseDetails);
       } catch (err) {
         console.error("Error fetching certificate data:", err);
         setError("Failed to load certificate data.");

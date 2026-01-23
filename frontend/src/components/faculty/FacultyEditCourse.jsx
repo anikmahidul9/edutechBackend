@@ -19,6 +19,7 @@ import {
   FaCheckCircle,
   FaInfoCircle,
   FaArrowLeft,
+  FaFilePdf,
 } from "react-icons/fa";
 
 const FacultyEditCourse = () => {

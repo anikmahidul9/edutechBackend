@@ -365,13 +365,13 @@ const AdminDashboard = () => {
             <div className="bg-green-100 p-3 rounded-lg">
               <FaDollarSign className="text-2xl text-green-600" />
             </div>
-            <span className="flex items-center gap-1 text-green-600 text-sm font-semibold">
+            {/* <span className="flex items-center gap-1 text-green-600 text-sm font-semibold">
               <FaArrowUp />
               25%
-            </span>
+            </span> */}
           </div>
           <h3 className="text-gray-600 text-sm font-semibold mb-1">
-            Total Revenue
+            Total Sell 
           </h3>
           <p className="text-3xl font-bold text-gray-900">
             ৳{stats.totalRevenue.toLocaleString()}
@@ -491,7 +491,7 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-emerald-600 font-semibold mb-1">
-                    Total Revenue
+                    Total Sell
                   </p>
                   <p className="text-2xl font-bold text-emerald-900">
                     ৳{stats.totalRevenue.toLocaleString()}
