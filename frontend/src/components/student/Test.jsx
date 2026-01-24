@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaVial, FaSpinner, FaBookOpen, FaClipboardList, FaFilePdf, FaArrowRight } from "react-icons/fa";
+import { FaVial, FaSpinner, FaBookOpen, FaClipboardList, FaFilePdf, FaArrowRight, FaRedo, FaChartLine, FaTrophy } from "react-icons/fa";
 import { auth, db } from "../../config/firebase";
 import {
   collection,
@@ -75,13 +75,14 @@ const Test = () => {
         }));
         setAvailableWrittenExams(writtenExamsData);
 
-        // 5. Fetch student's quiz attempts
+        // 5. Fetch ALL student's quiz attempts
         const quizAttemptsRef = collection(db, "quizAttempts");
         const quizAttemptsQ = query(quizAttemptsRef, where("studentId", "==", user.uid));
         const quizAttemptsSnapshot = await getDocs(quizAttemptsQ);
         const attemptsData = quizAttemptsSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
+          submittedAt: doc.data().submittedAt?.toDate() || new Date(),
         }));
         setQuizAttempts(attemptsData);
 
@@ -92,9 +93,10 @@ const Test = () => {
         const submissionsData = writtenSubmissionsSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
+          submittedAt: doc.data().submittedAt?.toDate() || new Date(),
+          gradedAt: doc.data().gradedAt?.toDate() || null,
         }));
         setWrittenExamSubmissions(submissionsData);
-
 
       } catch (err) {
         console.error("Error fetching student exams:", err);
@@ -106,6 +108,44 @@ const Test = () => {
 
     fetchStudentExams();
   }, []);
+
+  // Helper function to get quiz attempts for a specific quiz
+  const getQuizAttempts = (quizId) => {
+    return quizAttempts.filter(attempt => attempt.quizId === quizId);
+  };
+
+  // Helper function to get the best attempt for a quiz
+  const getBestAttempt = (quizId) => {
+    const attempts = getQuizAttempts(quizId);
+    if (attempts.length === 0) return null;
+    
+    return attempts.reduce((best, current) => {
+      const bestPercentage = (best.score / best.totalQuestions) * 100;
+      const currentPercentage = (current.score / current.totalQuestions) * 100;
+      return currentPercentage > bestPercentage ? current : best;
+    });
+  };
+
+  // Helper function to get the latest attempt for a quiz
+  const getLatestAttempt = (quizId) => {
+    const attempts = getQuizAttempts(quizId);
+    if (attempts.length === 0) return null;
+    
+    return attempts.reduce((latest, current) => {
+      return new Date(current.submittedAt) > new Date(latest.submittedAt) ? current : latest;
+    });
+  };
+
+  // Helper function to get written exam submission for a specific exam
+  const getWrittenExamSubmission = (examId) => {
+    const submissions = writtenExamSubmissions.filter(sub => sub.examId === examId);
+    if (submissions.length === 0) return null;
+    
+    // Return the latest submission
+    return submissions.reduce((latest, current) => {
+      return new Date(current.submittedAt) > new Date(latest.submittedAt) ? current : latest;
+    });
+  };
 
   if (loading) {
     return (
@@ -174,7 +214,7 @@ const Test = () => {
             {Object.keys(examsByCourse).map((courseId) => {
               const courseExams = examsByCourse[courseId];
               if (courseExams.quizzes.length === 0 && courseExams.writtenExams.length === 0) {
-                return null; // Skip if no exams for this course
+                return null;
               }
               return (
                 <div key={courseId} className="border border-gray-200 rounded-2xl p-6 bg-gray-50">
@@ -184,39 +224,74 @@ const Test = () => {
 
                   {courseExams.quizzes.length > 0 && (
                     <div className="mb-6">
-                      <h3 className="text-xl font-semibold text-gray-700 mb-4">Quizzes:</h3>
+                      <h3 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                        <FaChartLine className="mr-2 text-indigo-500" /> Quizzes:
+                      </h3>
                       <div className="space-y-3">
                         {courseExams.quizzes.map((quiz) => {
-                          const attempt = quizAttempts.find(
-                            (att) => att.quizId === quiz.id
-                          );
+                          const attempts = getQuizAttempts(quiz.id);
+                          const bestAttempt = getBestAttempt(quiz.id);
+                          const latestAttempt = getLatestAttempt(quiz.id);
+                          const attemptCount = attempts.length;
+                          
                           return (
                             <div
                               key={quiz.id}
-                              className="flex items-center justify-between bg-white p-4 rounded-lg shadow-sm border border-gray-100"
+                              className="bg-white p-4 rounded-lg shadow-sm border border-gray-100"
                             >
-                              <p className="font-medium text-gray-800">
-                                {quiz.quizTitle}
-                                {attempt && (
-                                  <span className="ml-3 text-sm text-gray-500">
-                                    (Last Score: {attempt.score}/{attempt.totalQuestions})
-                                  </span>
-                                )}
-                              </p>
-                              {attempt ? (
-                                <Link
-                                  to={`/student/take-quiz/${quiz.id}`} // Route will display results if submitted
-                                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
-                                >
-                                  View Results / Retake
-                                </Link>
-                              ) : (
-                                <Link
-                                  to={`/student/take-quiz/${quiz.id}`}
-                                  className="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition-colors text-sm"
-                                >
-                                  Take Quiz
-                                </Link>
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
+                                <div>
+                                  <p className="font-bold text-gray-800 text-lg">
+                                    {quiz.quizTitle}
+                                  </p>
+                                  {attemptCount > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                      <span className="text-sm text-gray-500">
+                                        Attempts: {attemptCount}
+                                      </span>
+                                      {bestAttempt && (
+                                        <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                          <FaTrophy className="inline mr-1" /> Best: {bestAttempt.score}/{bestAttempt.totalQuestions}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div className="mt-2 sm:mt-0">
+                                  {attemptCount > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                      {latestAttempt && (
+                                        <Link
+                                          to={`/student/take-quiz/${quiz.id}`}
+                                          className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-md hover:from-indigo-600 hover:to-blue-600 transition-colors text-sm flex items-center"
+                                        >
+                                          <FaRedo className="mr-2" /> Retake Quiz
+                                        </Link>
+                                      )}
+                        
+                                    </div>
+                                  ) : (
+                                    <Link
+                                      to={`/student/take-quiz/${quiz.id}`}
+                                      className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-md hover:from-emerald-600 hover:to-teal-600 transition-colors text-sm"
+                                    >
+                                      Take Quiz
+                                    </Link>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {latestAttempt && (
+                                <div className="mt-2 p-2 bg-gray-50 rounded">
+                                  <p className="text-sm text-gray-600">
+                                    <span className="font-medium">Latest attempt:</span> {latestAttempt.score}/{latestAttempt.totalQuestions} 
+                                    ({Math.round((latestAttempt.score / latestAttempt.totalQuestions) * 100)}%)
+                                    <span className="ml-2 text-xs text-gray-500">
+                                      on {latestAttempt.submittedAt.toLocaleDateString()}
+                                    </span>
+                                  </p>
+                                </div>
                               )}
                             </div>
                           );
@@ -230,15 +305,13 @@ const Test = () => {
                       <h3 className="text-xl font-semibold text-gray-700 mb-4">Written Exams:</h3>
                       <div className="space-y-3">
                         {courseExams.writtenExams.map((exam) => {
-                          const submission = writtenExamSubmissions.find(
-                            (sub) => sub.examId === exam.id
-                          );
+                          const submission = getWrittenExamSubmission(exam.id);
                           let statusText = "Not Submitted";
                           let statusColor = "text-red-500";
                           let actionButton = (
                             <Link
                               to={`/student/submit-written-exam/${exam.id}`}
-                              className="px-4 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors text-sm"
+                              className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-md hover:from-emerald-600 hover:to-teal-600 transition-colors text-sm"
                             >
                               Submit Exam
                             </Link>
@@ -246,12 +319,12 @@ const Test = () => {
 
                           if (submission) {
                             if (submission.graded) {
-                              statusText = `Graded (${submission.marks || 0} Marks)`;
+                              statusText = `Graded: ${submission.marks || 0}/100`;
                               statusColor = "text-green-600";
                               actionButton = (
                                 <Link
-                                  to={`/student/view-submission/${submission.id}`} // Placeholder for viewing submission
-                                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+                                  to={`/student/view-submission/${submission.id}`}
+                                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-md hover:from-blue-600 hover:to-indigo-600 transition-colors text-sm"
                                 >
                                   View Submission
                                 </Link>
@@ -261,8 +334,8 @@ const Test = () => {
                               statusColor = "text-yellow-600";
                               actionButton = (
                                 <Link
-                                  to={`/student/view-submission/${submission.id}`} // Placeholder for viewing submission
-                                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+                                  to={`/student/view-submission/${submission.id}`}
+                                  className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-md hover:from-yellow-600 hover:to-amber-600 transition-colors text-sm"
                                 >
                                   View Submission
                                 </Link>
@@ -272,15 +345,25 @@ const Test = () => {
                           return (
                             <div
                               key={exam.id}
-                              className="flex items-center justify-between bg-white p-4 rounded-lg shadow-sm border border-gray-100"
+                              className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-lg shadow-sm border border-gray-100"
                             >
-                              <p className="font-medium text-gray-800">
-                                {exam.title}{" "}
-                                <span className={`ml-2 text-sm ${statusColor}`}>
-                                  ({statusText})
-                                </span>
-                              </p>
-                              {actionButton}
+                              <div>
+                                <p className="font-bold text-gray-800">
+                                  {exam.title}
+                                </p>
+                                <div className={`mt-1 text-sm ${statusColor} flex items-center`}>
+                                  <span className={`w-2 h-2 rounded-full mr-2 ${statusColor.replace('text-', 'bg-')}`}></span>
+                                  {statusText}
+                                </div>
+                                {submission && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Submitted: {submission.submittedAt.toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="mt-2 sm:mt-0">
+                                {actionButton}
+                              </div>
                             </div>
                           );
                         })}
